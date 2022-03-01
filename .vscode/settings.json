@@ -1,0 +1,16 @@
+{
+    // vscode markdownlint extension: https://github.com/DavidAnson/vscode-markdownlint
+    "editor.codeActionsOnSave": {
+        "source.fixAll.markdownlint": true
+    },
+    // python
+    // "python.formatting.provider": "black",
+    "[python]": {
+        "editor.formatOnSave": true
+    },
+    // default formatter
+    "[json]": {
+        "editor.formatOnSave": true,
+    },
+    "python.formatting.provider": "black",
+}

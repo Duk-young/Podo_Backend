@@ -1,0 +1,9 @@
+# cache
+
+__pycache__/
+
+# env
+venv/
+
+# envvar
+.env

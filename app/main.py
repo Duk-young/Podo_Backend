@@ -31,8 +31,35 @@ def startup_db_client():
     app.mongodb_client = AsyncIOMotorClient(
         DB_ADDRESS + "?ssl=true&ssl_cert_reqs=CERT_NONE"
     )
+    app.mongodb = (
+        app.mongodb_client["podo_prod"]
+        if RUNTIME_ENV
+        else app.mongodb_client["podo_dev"]
+    )
+    app.imgurlstr = AWS_IMAGE_SERVER_URL
+    app.s3 = boto3.resource(
+        "s3",
+        aws_access_key_id=AWS_ACCESS_KEY,
+        aws_secret_access_key=AWS_SECRET_KEY,
+        region_name=AWS_REGION,
+    )
+    app.s3_bucket = app.s3.Bucket(AWS_BUCKET_NAME)
 
 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
+
+
+@app.get("/dbtest")
+async def db_test(request: Request):
+    wine = await request.app.mongodb["wines"].find_one({"wineID": 0}, {"_id": 0})
+    return wine
+
+
+@app.get("/s3test")
+async def s3_test(request: Request):
+    for dir in request.app.s3_bucket.objects.filter(
+        Prefix=AWS_IMAGE_SERVER_URL + "wines/"
+    ):  # 경로 존재 시 True 리턴
+        return True

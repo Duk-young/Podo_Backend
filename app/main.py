@@ -51,10 +51,10 @@ async def root():
     return {"message": "Hello World"}
 
 
-# @app.get("/dbtest")
-# async def db_test(request: Request):
-#     wine = await request.app.mongodb["wines"].find_one({"wineID": 0}, {"_id": 0})
-#     return wine
+@app.get("/dbtest")
+async def db_test(request: Request):
+    wine = await request.app.mongodb["wines"].find_one({"wineID": 0}, {"_id": 0})
+    return wine
 
 
 @app.get("/s3test")

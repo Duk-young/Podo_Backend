@@ -59,7 +59,6 @@ async def db_test(request: Request):
 
 @app.get("/s3test")
 async def s3_test(request: Request):
-    for dir in request.app.s3_bucket.objects.filter(
-        Prefix=AWS_IMAGE_SERVER_URL + "wines/"
-    ):  # 경로 존재 시 True 리턴
+    print(AWS_IMAGE_SERVER_URL + "wines/")
+    for dir in request.app.s3_bucket.objects.filter(Prefix="wines/"):  # 경로 존재 시 True 리턴
         return True

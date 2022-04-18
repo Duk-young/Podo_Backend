@@ -2,7 +2,6 @@
 ## Installation
 
 - Please follow the instructions below if you installed back-end repo for the first time.
-- You can choose one of these two installing methods, but I recommend to install docker.
 
 ## With Docker
 
@@ -16,7 +15,7 @@ docker build -t podo_back .
 # delete all the exisitng containers
 docker rm `docker ps -a -q`
 
-# docker container run (http://localhost:5001 for local use)
+# Server start docker container run (http://localhost:5001 for local use) 
 docker run -d --name podo_back_container -p 5001:8888 -t podo_back
 
 # docker container stop

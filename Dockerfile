@@ -21,5 +21,4 @@ ENV AWS_ACCESS_KEY=AKIA4ZEKSAALCJ337W76 \
     RUNTIME_ENV=dev
 RUN python3.9 -m pip install --no-cache-dir --upgrade -r /code/requirements.txt
 # 
-EXPOSE 8888
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8888"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT

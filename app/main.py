@@ -29,7 +29,7 @@ app = FastAPI()
 @app.on_event("startup")
 def startup_db_client():
     app.mongodb_client = AsyncIOMotorClient(
-        DB_ADDRESS + "?ssl=true&ssl_cert_reqs=CERT_NONE"
+        DB_ADDRESS + "" + "?ssl=true&ssl_cert_reqs=CERT_NONE"
     )
     app.mongodb = (
         app.mongodb_client["podo_prod"]
@@ -51,10 +51,10 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.get("/dbtest")
-async def db_test(request: Request):
-    wine = await request.app.mongodb["wines"].find_one({"wineID": 0}, {"_id": 0})
-    return wine
+# @app.get("/dbtest")
+# async def db_test(request: Request):
+#     wine = await request.app.mongodb["wines"].find_one({"wineID": 0}, {"_id": 0})
+#     return wine
 
 
 @app.get("/s3test")

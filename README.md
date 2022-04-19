@@ -1,26 +1,12 @@
 # CSE416 PODO BACKEND BY TEAM ONE-EGO
+
+# Backend Repo has been deployed via Heroku. You don't have to install the backend in your local!
+# ==> https://podo-backend.herokuapp.com/
+# Or you can install backend in your local computer
+
 ## Installation
 
 - Please follow the instructions below if you installed back-end repo for the first time.
-
-## With Docker
-
-- Please install Docker desktop app first
-- Then you can execute the commands below to setup the backend server using docker image
-
-```bash
-# create docker image and name it as podo_back (commands are specified in Dockerfile)
-docker build -t podo_back .
-
-# delete all the exisitng containers
-docker rm `docker ps -a -q`
-
-# Server start docker container run (http://localhost:5001 for local use) 
-docker run -d --name podo_back_container -p 5001:8888 -t podo_back
-
-# docker container stop
-docker stop podo_back_container
-```
 
 ## Without Docker
 ### For Windows
@@ -61,6 +47,25 @@ python3 server.py
 
 # Either one of the command should work for you.
 # Please DM me if it does not work for you.
+```
+
+## With Docker
+
+- Please install Docker desktop app first
+- Then you can execute the commands below to setup the backend server using docker image
+
+```bash
+# create docker image and name it as podo_back (commands are specified in Dockerfile)
+docker build -t podo_back .
+
+# delete all the exisitng containers
+docker rm `docker ps -a -q`
+
+# Server start docker container run (http://localhost:5001 for local use) 
+docker run -d --name podo_back_container -p 5001:8888 -t podo_back
+
+# docker container stop
+docker stop podo_back_container
 ```
 
 ## For your information

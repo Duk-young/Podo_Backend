@@ -1,8 +1,8 @@
 # CSE416 PODO BACKEND BY TEAM ONE-EGO
 
-# Backend Repo has been deployed via Heroku. You don't have to install the backend in your local!
-# ==> https://podo-backend.herokuapp.com/
-# Or you can install backend in your local computer
+## Backend Repo has been deployed via Heroku. You don't have to install the backend in your local!
+## ==> https://podo-backend.herokuapp.com/
+## Or you can install backend in your local computer
 
 ## Installation
 

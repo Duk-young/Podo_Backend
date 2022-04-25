@@ -48,7 +48,7 @@ def startup_db_client():
 
 @app.get("/")
 async def root():
-    return "Welcome to Podo"
+    return {"message": "Hello World"}
 
 
 @app.get("/dbtest")

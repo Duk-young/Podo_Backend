@@ -1,6 +1,6 @@
 from typing import Optional, Literal
 from pydantic import BaseModel, Field, ValidationError, validator
-import datetime
+from datetime import datetime
 
 
 class UserModel(BaseModel):
@@ -14,10 +14,10 @@ class UserModel(BaseModel):
     likedWinelists: list[str] = Field([])
     isDeleted: bool = Field(False)
     createdAt: datetime = Field(
-        datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
     lastUpdatedAt: datetime = Field(
-        datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
     tags: list[str] = Field([])
     followings: list[str] = Field([])

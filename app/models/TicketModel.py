@@ -1,6 +1,6 @@
 from typing import Optional, Literal
 from pydantic import BaseModel, Field, ValidationError, validator
-import datetime
+from datetime import datetime
 
 
 class SupportTicketModel(BaseModel):
@@ -10,10 +10,10 @@ class SupportTicketModel(BaseModel):
     userQuestion: str = Field(...)
     adminReponse: str = Field("")
     createdAt: datetime = Field(
-        datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
     lastUpdatedAt: datetime = Field(
-        datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
 
 
@@ -26,10 +26,10 @@ class VerificationTicketModel(BaseModel):
     adminFeedback: str = Field("")
     isDeleted: bool = Field(False)
     createdAt: datetime = Field(
-        datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
     lastUpdatedAt: datetime = Field(
-        datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
 
     class Config:

@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
 import boto3
+from .routers import wines
 
 # from .consts import origins
 # from .routers import form, story, user, s3upload, transaction, store
@@ -44,6 +45,10 @@ def startup_db_client():
         region_name=AWS_REGION,
     )
     app.s3_bucket = app.s3.Bucket(AWS_BUCKET_NAME)
+
+
+# include routers
+app.include_router(wines.router)
 
 
 @app.get("/")

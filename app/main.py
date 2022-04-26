@@ -34,7 +34,7 @@ def startup_db_client():
     )
     app.mongodb = (
         app.mongodb_client["podo_prod"]
-        if RUNTIME_ENV
+        if RUNTIME_ENV == "prod"
         else app.mongodb_client["podo_dev"]
     )
     app.imgurlstr = AWS_IMAGE_SERVER_URL

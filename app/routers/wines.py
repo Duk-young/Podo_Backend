@@ -12,11 +12,13 @@ from fastapi import (
 )
 import sys
 from fastapi.responses import JSONResponse
+from pymongo import ReturnDocument
 from fastapi.encoders import jsonable_encoder
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 from ..models.WineModel import WineModel
 from typing import List, Optional
 from tempfile import TemporaryFile
+from datetime import datetime
 
 router = APIRouter(
     prefix="/wines",
@@ -94,7 +96,12 @@ async def total_wines(request: Request):
 
 @router.get("/{wineID}")
 async def get_wine(request: Request, wineID: int):
-    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    wine = await request.app.mongodb["wine"].find_one_and_update(
+        {"wineID": wineID},
+        {"$inc": {"views": 1}},
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
     if wine == None:
         response = JSONResponse(content="No such wine exists")
         response.status_code = 404
@@ -128,31 +135,8 @@ async def post_wine(
     newWineID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
         {"_id": "wine"}, {"$inc": {"index": 1}}, {"index": 1}
     )
-    newWine = await request.app.mongodb["wine"].insert_one(
-        {
-            "wineID": newWineID["index"],
-            "tags": json_wineInfo["tags"],
-            "name": json_wineInfo["name"],
-            "images": json_wineInfo["images"],
-            "lightness": json_wineInfo["lightness"],
-            "smoothness": json_wineInfo["smoothness"],
-            "sweetness": json_wineInfo["sweetness"],
-            "softness": json_wineInfo["softness"],
-            "abv": json_wineInfo["abv"],
-            "price": json_wineInfo["price"],
-            "region": json_wineInfo["region"],
-            "closure": json_wineInfo["closure"],
-            "grapes": json_wineInfo["grapes"],
-            "rating": json_wineInfo["rating"],
-            "winery": json_wineInfo["winery"],
-            "description": json_wineInfo["description"],
-            "views": 0,
-            "likes": [],
-            "isDeleted": False,
-            "createdAt": json_wineInfo["createdAt"],
-            "lastUpdatedAt": json_wineInfo["lastUpdatedAt"],
-        }
-    )
+    json_wineInfo["wineID"] = newWineID["index"]
+    newWine = await request.app.mongodb["wine"].insert_one(json_wineInfo)
     if newWine == None:
         response = JSONResponse(
             content="An error occurred while creating new wine object"
@@ -160,7 +144,12 @@ async def post_wine(
         response.status_code = 400
         return response
     else:
-        response = JSONResponse(content="Successfully created new wine")
+        response = JSONResponse(
+            content={
+                "wineID": newWineID["index"],
+                "createdAt": json_wineInfo["createdAt"],
+            }
+        )
         response.status_code = 201
         return response
 
@@ -179,7 +168,17 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
         response.status_code = 401
         return response
     wine = await request.app.mongodb["wine"].find_one_and_update(
-        {"wineID": wineID}, {"$set": {"isDeleted": False}}, {"_id": 0}
+        {"wineID": wineID},
+        {
+            "$set": {
+                "isDeleted": False,
+                "lastUpdatedAt": datetime.now()
+                .astimezone()
+                .strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
     )
     if wine != None:
         return {
@@ -231,6 +230,7 @@ async def update_wine(
             }
         },
         {"_id": 0},
+        return_document=ReturnDocument.AFTER,
     )
     if wine == None:
         response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
@@ -252,7 +252,17 @@ async def delete_wine(request: Request, wineID: int = -1, userID: int = -1):
         response.status_code = 401
         return response
     wine = await request.app.mongodb["wine"].find_one_and_update(
-        {"wineID": wineID}, {"$set": {"isDeleted": True}}, {"_id": 0}
+        {"wineID": wineID},
+        {
+            "$set": {
+                "isDeleted": True,
+                "lastUpdatedAt": datetime.now()
+                .astimezone()
+                .strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
     )
     if wine != None:
         return {

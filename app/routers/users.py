@@ -103,7 +103,7 @@ async def username_duplicate_check(request: Request, email: str = ""):
     return {"email": email, "duplicate": True}
 
 
-@router.get("/my-wine-review")
+@router.get("/my-wine-reviews")
 async def get_user_wine_review(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
 ):

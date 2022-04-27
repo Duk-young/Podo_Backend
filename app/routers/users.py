@@ -103,6 +103,18 @@ async def username_duplicate_check(request: Request, email: str = ""):
     return {"email": email, "duplicate": True}
 
 
+@router.get("/my-wine-review")
+async def get_user_wine_review(reqeust: Request, userID: int = -1):
+    # TODO
+    return 0
+
+
+@router.get("/my-winelist-review")
+async def get_user_winelist_review(reqeust: Request, userID: int = -1):
+    # TODO
+    return 0
+
+
 @router.post("")
 async def post_user(request: Request, userInfo: UserModel = Body(...)):
     json_userInfo = jsonable_encoder(userInfo)

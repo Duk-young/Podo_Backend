@@ -103,7 +103,7 @@ async def username_duplicate_check(request: Request, email: str = ""):
     return {"email": email, "duplicate": True}
 
 
-@router.get("/my-wine-reviews")
+@router.get("/{userID}/reviews")
 async def get_user_wine_review(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
 ):
@@ -124,6 +124,90 @@ async def get_user_wine_review(
         response = JSONResponse(content="No more reviews to fetch")
         response.status_code = 204
         return response
+    return docs
+
+
+@router.get("/{userID}/reviewed-wines")
+async def get_listof_user_reviewed_wine(
+    request: Request, userID: int = -1, num: int = 20, page: int = 1
+):
+    toSkip = num * (page - 1)
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    reviews = (
+        request.app.mongodb["review"]
+        .find({"userID": userID}, {"_id": 0})
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await reviews.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content="No more wines to fetch")
+        response.status_code = 204
+        return response
+    wineIDs = []
+    for doc in docs:
+        wineIDs.append(doc["wineID"])
+    wines = (
+        request.app.mongodb["wine"]
+        .find({"wineID": {"$in": wineIDs}}, {"_id": 0})
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await wines.to_list(None)
+    return docs
+
+
+@router.get("/{userID}/liked-wines")
+async def get_listof_user_liked_wine(
+    request: Request, userID: int = -1, num: int = 20, page: int = 1
+):
+    toSkip = num * (page - 1)
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    likedWines = user["likedWines"]
+    if len(docs) == 0:
+        response = JSONResponse(content="No more wines to fetch")
+        response.status_code = 204
+        return response
+    wines = (
+        request.app.mongodb["wine"]
+        .find({"wineID": {"$in": likedWines}}, {"_id": 0})
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await wines.to_list(None)
+    return docs
+
+
+@router.get("/{userID}/liked-winelists")
+async def get_listof_user_liked_winelist(
+    request: Request, userID: int = -1, num: int = 20, page: int = 1
+):
+    toSkip = num * (page - 1)
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    likedWinelists = user["likedWinelists"]
+    if len(docs) == 0:
+        response = JSONResponse(content="No more wines to fetch")
+        response.status_code = 204
+        return response
+    winelists = (
+        request.app.mongodb["wine"]
+        .find({"wineID": {"$in": likedWinelists}}, {"_id": 0})
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await winelists.to_list(None)
     return docs
 
 

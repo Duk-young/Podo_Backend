@@ -354,7 +354,7 @@ async def like_winelist(request: Request, userID: int = -1, winelistID: int = -1
 async def like_tags(
     request: Request,
     userID: int = -1,
-    tags: list[str] = Query(None),
+    tags: list[str] = Query([]),
 ):
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:

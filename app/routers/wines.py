@@ -40,11 +40,12 @@ async def search_wines(
     maxPrice: float = sys.maxsize,
     minRating: float = 0,
     keyword: str = "",
-    tags: list[str] = Query(None),
+    tags: list[str] = Query([]),
 ):
     # TODO sorting 방식
     toSkip = num * (page - 1)
     wines = None
+    print(tags)
     if len(tags) == 0:
         wines = (
             request.app.mongodb["wine"]
@@ -286,3 +287,7 @@ async def delete_wine(request: Request, wineID: int = -1, userID: int = -1):
 @router.get("/{wineID}/reviews/total")
 async def get_total_wine_reviews(request: Request, wineID: int = -1):
     wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response

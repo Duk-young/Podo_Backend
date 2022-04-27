@@ -45,7 +45,7 @@ async def search_winelists(
     num: int = 10,
     page: int = 1,
     minRating: int = 0,
-    tags: list[str] = Query(None),
+    tags: list[str] = Query([]),
     sort: int = 1,
 ):
     toSkip = num * (page - 1)

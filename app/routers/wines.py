@@ -16,6 +16,7 @@ from pymongo import ReturnDocument
 from fastapi.encoders import jsonable_encoder
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 from ..models.WineModel import WineModel
+from ..models.ReviewModel import ReviewModel
 from typing import List, Optional
 from tempfile import TemporaryFile
 from datetime import datetime
@@ -271,3 +272,17 @@ async def delete_wine(request: Request, wineID: int = -1, userID: int = -1):
             "lastUpdatedAt": wine["lastUpdatedAt"],
         }
     return "Failed to restore wine."
+
+
+########################################################
+########################################################
+########################################################
+###########   Review API beyond this line   ############
+########################################################
+########################################################
+########################################################
+
+
+@router.get("/{wineID}/reviews/total")
+async def get_total_wine_reviews(request: Request, wineID: int = -1):
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})

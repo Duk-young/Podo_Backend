@@ -11,7 +11,7 @@ class SommelierPick(BaseModel):
 class WinelistModel(BaseModel):
     userID: int = Field(...)
     title: str = Field("")
-    images: list[str] = Field([])
+    thumbnailImage: str = Field("")
     tags: list[str] = Field([])
     content: str = Field("")
     wines: list[SommelierPick] = Field([])
@@ -23,7 +23,7 @@ class WinelistModel(BaseModel):
         datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
     views: int = Field(0)
-    likes: str[int] = Field([])
+    likes: list[int] = Field([])
 
     class Config:
         allow_population_by_field_name = True

@@ -104,15 +104,52 @@ async def username_duplicate_check(request: Request, email: str = ""):
 
 
 @router.get("/my-wine-review")
-async def get_user_wine_review(reqeust: Request, userID: int = -1):
-    # TODO
-    return 0
+async def get_user_wine_review(
+    request: Request, userID: int = -1, num: int = 20, page: int = 1
+):
+    toSkip = num * (page - 1)
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    reviews = (
+        request.app.mongodb["review"]
+        .find({"userID": userID}, {"_id": 0})
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await reviews.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content="No more reviews to fetch")
+        response.status_code = 204
+        return response
+    return docs
 
 
-@router.get("/my-winelist-review")
-async def get_user_winelist_review(reqeust: Request, userID: int = -1):
-    # TODO
-    return 0
+@router.get("/my-winelist-comment")
+async def get_user_winelist_review(
+    request: Request, userID: int = -1, num: int = 20, page: int = 1
+):
+    # 보류
+    toSkip = num * (page - 1)
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    reviews = (
+        request.app.mongodb["review"]
+        .find({"userID": userID}, {"_id": 0})
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await reviews.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content="No more reviews to fetch")
+        response.status_code = 204
+        return response
+    return docs
 
 
 @router.post("")
@@ -137,20 +174,96 @@ async def post_user(request: Request, userInfo: UserModel = Body(...)):
     return response
 
 
-@router.post("/{userID}/wines")
-async def like_wine(
-    request: Request, userID: int = -1, wineID: int = -1, append: bool = True
-):
-    # TODO
-    return 0
+@router.post("/{userID}/like-wine")
+async def like_wine(request: Request, userID: int = -1, wineID: int = -1):
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    if wineID not in user["likedWines"]:
+        user = await request.app.mongodb["user"].find_one_and_update(
+            {"userID": userID},
+            {
+                "$push": {"likedWines": wineID},
+                "$set": {
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
+            {"_id": 0},
+            return_document=ReturnDocument.AFTER,
+        )
+    else:
+        user = await request.app.mongodb["user"].find_one_and_update(
+            {"userID": userID},
+            {
+                "$pull": {"likedWines": wineID},
+                "$set": {
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
+            {"_id": 0},
+            return_document=ReturnDocument.AFTER,
+        )
+    if user == None:
+        response = JSONResponse(content="An error occurred while updating user")
+        response.status_code = 404
+        return response
+    return {
+        "userID": user["userID"],
+        "likedWines": user["likedWines"],
+        "lastUpdatedAt": user["lastUpdatedAt"],
+    }
 
 
-@router.post("/{userID}/winelists")
-async def like_winelist(
-    request: Request, userID: int = -1, winelistID: int = -1, append: bool = True
-):
-    # TODO
-    return 0
+@router.post("/{userID}/like-winelist")
+async def like_winelist(request: Request, userID: int = -1, winelistID: int = -1):
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    if winelistID not in user["likedWinelists"]:
+        user = await request.app.mongodb["user"].find_one_and_update(
+            {"userID": userID},
+            {
+                "$push": {"likedWinelists": winelistID},
+                "$set": {
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
+            {"_id": 0},
+            return_document=ReturnDocument.AFTER,
+        )
+    else:
+        user = await request.app.mongodb["user"].find_one_and_update(
+            {"userID": userID},
+            {
+                "$pull": {"likedWinelists": winelistID},
+                "$set": {
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
+            {"_id": 0},
+            return_document=ReturnDocument.AFTER,
+        )
+    if user == None:
+        response = JSONResponse(content="An error occurred while updating user")
+        response.status_code = 404
+        return response
+    return {
+        "userID": user["userID"],
+        "likedWinelists": user["likedWinelists"],
+        "lastUpdatedAt": user["lastUpdatedAt"],
+    }
 
 
 @router.post("/{userID}/tags")
@@ -158,22 +271,129 @@ async def like_tags(
     request: Request,
     userID: int = -1,
     tags: list[str] = Query(None),
-    append: bool = True,
 ):
-    # TODO
-    return 0
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    user = await request.app.mongodb["user"].find_one_and_update(
+        {"userID": userID},
+        {
+            "$set": {
+                "lastUpdatedAt": datetime.now()
+                .astimezone()
+                .strftime("%Y-%m-%d %H:%M:%S"),
+                "tags": tags,
+            },
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    if user == None:
+        response = JSONResponse(content="An error occurred while updating user")
+        response.status_code = 404
+        return response
+    return {
+        "userID": user["userID"],
+        "tags": user["tags"],
+        "lastUpdatedAt": user["lastUpdatedAt"],
+    }
 
 
-@router.post("/{userID}/fllow")
+@router.post("/{userID}/follow")
 async def like_user(
     request: Request,
     userID: int = -1,
     targetUserID: int = -1,
     followOption: str = "following",
-    append: bool = True,
 ):
-    # TODO
-    return 0
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    targetUser = await request.app.mongodb["user"].find_one(
+        {"userID": targetUserID}, {"_id": 0}
+    )
+    if targetUser == None:
+        response = JSONResponse(content="No such target user exists")
+        response.status_code = 404
+        return response
+    if followOption == "following":
+        if targetUserID in user["followings"]:
+            user = await request.app.mongodb["user"].find_one_and_update(
+                {"userID": userID},
+                {
+                    "$push": {"followings": targetUserID},
+                    "$set": {
+                        "lastUpdatedAt": datetime.now()
+                        .astimezone()
+                        .strftime("%Y-%m-%d %H:%M:%S"),
+                    },
+                },
+                {"_id": 0},
+                return_document=ReturnDocument.AFTER,
+            )
+        else:
+            user = await request.app.mongodb["user"].find_one_and_update(
+                {"userID": userID},
+                {
+                    "$pull": {"followings": targetUserID},
+                    "$set": {
+                        "lastUpdatedAt": datetime.now()
+                        .astimezone()
+                        .strftime("%Y-%m-%d %H:%M:%S"),
+                    },
+                },
+                {"_id": 0},
+                return_document=ReturnDocument.AFTER,
+            )
+    else:
+        if targetUserID in user["followers"]:
+            user = await request.app.mongodb["user"].find_one_and_update(
+                {"userID": userID},
+                {
+                    "$push": {"followers": targetUserID},
+                    "$set": {
+                        "lastUpdatedAt": datetime.now()
+                        .astimezone()
+                        .strftime("%Y-%m-%d %H:%M:%S"),
+                    },
+                },
+                {"_id": 0},
+                return_document=ReturnDocument.AFTER,
+            )
+        else:
+            user = await request.app.mongodb["user"].find_one_and_update(
+                {"userID": userID},
+                {
+                    "$pull": {"followers": targetUserID},
+                    "$set": {
+                        "lastUpdatedAt": datetime.now()
+                        .astimezone()
+                        .strftime("%Y-%m-%d %H:%M:%S"),
+                    },
+                },
+                {"_id": 0},
+                return_document=ReturnDocument.AFTER,
+            )
+    if user == None:
+        response = JSONResponse(content="An error occurred while updating user")
+        response.status_code = 404
+        return response
+    if followOption == "following":
+        return {
+            "userID": user["userID"],
+            "followings": user["followings"],
+            "lastUpdatedAt": user["lastUpdatedAt"],
+        }
+    else:
+        return {
+            "userID": user["userID"],
+            "followers": user["followers"],
+            "lastUpdatedAt": user["lastUpdatedAt"],
+        }
 
 
 @router.put("/{userID}")

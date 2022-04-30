@@ -59,7 +59,7 @@ async def search_winelists(
                         {"rating": {"$gte": minRating}},
                         {"isDeleted": False},
                     ],
-                    "name": {"$regex": keyword},
+                    "name": {"$regex": keyword, "$options": "i"},
                 },
                 {"_id": 0},
             )
@@ -77,7 +77,7 @@ async def search_winelists(
                         {"isDeleted": False},
                         {"tags": {"$in": tags}},
                     ],
-                    "name": {"$regex": keyword},
+                    "name": {"$regex": keyword, "$options": "i"},
                 },
                 {"_id": 0},
             )

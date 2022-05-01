@@ -16,7 +16,7 @@ from pymongo import ReturnDocument
 from fastapi.encoders import jsonable_encoder
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 from ..models.WineModel import WineModel
-from ..models.ReviewModel import ReviewModel
+from ..models.ReviewModel import ReviewModel, CommentModel
 from typing import List, Optional
 from tempfile import TemporaryFile
 from datetime import datetime
@@ -86,6 +86,10 @@ async def search_wines(
             .limit(num)
         )
     docs = await wines.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content="No wines exists")
+        response.status_code = 204
+        return response
     return docs
 
 
@@ -290,4 +294,295 @@ async def get_total_wine_reviews(request: Request, wineID: int = -1):
     if wine == None:
         response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
         response.status_code = 404
+        return response
+    reviews = request.app.mongodb["review"].find({"wineID": wineID}, {"_id": 0})
+    docs = await reviews.to_list(None)
+
+    if len(docs) == 0:
+        response = JSONResponse(content="No reviews exists")
+        response.status_code = 204
+        return response
+    return {"wineID": wineID, "totalReviews": len(docs)}
+
+
+@router.get("/{wineID}/reviews")
+async def get_wine_reviews(
+    request: Request, wineID: int = -1, num: int = 20, sort: int = 1, page: int = 1
+):
+    toSkip = num * (page - 1)
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    reviews = (
+        request.app.mongodb["review"]
+        .find({"wineID": wineID}, {"_id": 0})
+        .sort("_id", -1)
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await reviews.to_list(None)
+
+    if len(docs) == 0:
+        response = JSONResponse(content="No reviews exists")
+        response.status_code = 204
+        return response
+    return docs
+
+
+@router.post("/{wineID}/reviews")
+async def post_wine_reviews(
+    request: Request, wineID: int = -1, reviewInfo: ReviewModel = Body(...)
+):
+    json_reviewInfo = jsonable_encoder(reviewInfo)
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    user = await request.app.mongodb["user"].find_one(
+        {"userID": json_reviewInfo["userID"]}, {"_id": 0}
+    )
+    if user == None:
+        response = JSONResponse(content="userID is invalid. No such user exists in DB")
+        response.status_code = 404
+        return response
+    newReviewID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
+        {"_id": "review"}, {"$inc": {"index": 1}}, {"index": 1}
+    )
+    json_reviewInfo["reviewID"] = newReviewID["index"]
+    newReview = await request.app.mongodb["review"].insert(json_reviewInfo)
+    if newReview == None:
+        response = JSONResponse(
+            content="An error occurred while creating new review object"
+        )
+        response.status_code = 400
+        return response
+    else:
+        response = JSONResponse(
+            content={
+                "reviewID": newReviewID["index"],
+                "createdAt": json_reviewInfo["createdAt"],
+            }
+        )
+        response.status_code = 201
+        return response
+
+
+@router.post("/{wineID}/reviews/{reviewID}/comment")
+async def post_wine_reviews(
+    request: Request,
+    wineID: int = -1,
+    reviewID: int = -1,
+    commentInfo: CommentModel = Body(...),
+):
+    json_commentInfo = jsonable_encoder(commentInfo)
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    review = await request.app.mongodb["review"].find_one(
+        {"reviewID": reviewID}, {"_id": 0}
+    )
+    if review == None:
+        response = JSONResponse(
+            content="reviewID is invalid. No such review exists in DB"
+        )
+        response.status_code = 404
+        return response
+    user = await request.app.mongodb["user"].find_one(
+        {"userID": json_commentInfo["userID"]}, {"_id": 0}
+    )
+    if user == None:
+        response = JSONResponse(content="userID is invalid. No such user exists in DB")
+        response.status_code = 404
+        return response
+    newCommentID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
+        {"_id": "comment"}, {"$inc": {"index": 1}}, {"index": 1}
+    )
+    json_commentInfo["commentID"] = newCommentID["index"]
+    appendComment = await request.app.mongodb["review"].find_one_and_update(
+        {"reviewID": reviewID},
+        {
+            "$push": {"comments": json_commentInfo},
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+
+    if appendComment == None:
+        response = JSONResponse(
+            content="An error occurred while creating new review object"
+        )
+        response.status_code = 400
+        return response
+    else:
+        response = JSONResponse(
+            content={
+                "commentID": newCommentID["index"],
+                "createdAt": json_commentInfo["createdAt"],
+            }
+        )
+        response.status_code = 201
+        return response
+
+
+@router.put("/{wineID}/reviews/{reviewID}")
+async def update_review(
+    request: Request,
+    wineID: int = -1,
+    reviewID: int = -1,
+    reviewInfo: ReviewModel = Body(...),
+):
+    json_reviewInfo = jsonable_encoder(reviewInfo)
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    user = await request.app.mongodb["user"].find_one(
+        {"userID": json_reviewInfo["userID"]}, {"_id": 0}
+    )
+    if user == None:
+        response = JSONResponse(content="userID is invalid. No such user exists in DB")
+        response.status_code = 404
+        return response
+    updatedReview = await request.app.mongodb["review"].find_one_and_update(
+        {"reviewID": reviewID},
+        {
+            "$set": {
+                "content": json_reviewInfo["content"],
+                "rating": json_reviewInfo["rating"],
+                "tags": json_reviewInfo["tags"],
+                "lastUpdatedAt": datetime.now()
+                .astimezone()
+                .strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    if updatedReview == None:
+        response = JSONResponse(
+            content="An error occurred while creating new review object"
+        )
+        response.status_code = 400
+        return response
+    else:
+        response = JSONResponse(
+            content={
+                "reviewID": updatedReview["index"],
+                "lastUpdatedAt": json_reviewInfo["lastUpdatedAt"],
+            }
+        )
+        response.status_code = 201
+        return response
+
+
+@router.delete("/{wineID}/reviews/{reviewID}")
+async def delete_wine_reviews(
+    request: Request, wineID: int = -1, reviewID: int = -1, userID: int = -1
+):
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="userID is invalid. No such user exists in DB")
+        response.status_code = 404
+        return response
+    review = await request.app.mongodb["review"].find_one(
+        {"reviewID": reviewID}, {"_id": 0}
+    )
+    if review == None:
+        response = JSONResponse(
+            content="reviewID is invalid. No such review exists in DB"
+        )
+        response.status_code = 404
+        return response
+    deleteReview = await request.app.mongodb["review"].find_one_and_update(
+        {"reviewID": reviewID},
+        {
+            "$set": {
+                "isDeleted": True,
+                "lastUpdatedAt": datetime.now()
+                .astimezone()
+                .strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    if deleteReview == None:
+        response = JSONResponse(
+            content="An error occurred while creating new review object"
+        )
+        response.status_code = 400
+        return response
+    else:
+        response = JSONResponse(
+            content={
+                "reviewID": deleteReview["reviewID"],
+                "isDeleted": deleteReview["isDeleted"],
+                "lastUpdatedAt": deleteReview["lastUpdatedAt"],
+            }
+        )
+        return response
+
+
+@router.delete("/{wineID}/reviews/{reviewID}/comment/{commentID}")
+async def delete_wine_review_comment(
+    request: Request,
+    wineID: int = -1,
+    reviewID: int = -1,
+    commentID: int = -1,
+    userID: int = -1,
+):
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    review = await request.app.mongodb["review"].find_one(
+        {"reviewID": reviewID}, {"_id": 0}
+    )
+    if review == None:
+        response = JSONResponse(
+            content="reviewID is invalid. No such review exists in DB"
+        )
+        response.status_code = 404
+        return response
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="userID is invalid. No such user exists in DB")
+        response.status_code = 404
+        return response
+
+    appendComment = await request.app.mongodb["review"].find_one_and_update(
+        {"reviewID": reviewID},
+        {
+            "$push": {"comments": json_commentInfo},
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+
+    if appendComment == None:
+        response = JSONResponse(
+            content="An error occurred while creating new review object"
+        )
+        response.status_code = 400
+        return response
+    else:
+        response = JSONResponse(
+            content={
+                "commentID": newCommentID["index"],
+                "createdAt": json_commentInfo["createdAt"],
+            }
+        )
+        response.status_code = 201
         return response

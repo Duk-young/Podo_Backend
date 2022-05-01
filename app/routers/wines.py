@@ -1,4 +1,5 @@
 import json
+from xml.etree.ElementTree import Comment
 from fastapi import (
     APIRouter,
     Body,
@@ -305,6 +306,31 @@ async def get_total_wine_reviews(request: Request, wineID: int = -1):
     return {"wineID": wineID, "totalReviews": len(docs)}
 
 
+@router.get("/{wineID}/reviews/{reviewID}/comments/total")
+async def get_total_wine_review_comments(
+    request: Request, wineID: int = -1, reviewID: int = -1
+):
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    review = await request.app.mongodb["review"].find_one(
+        {"wineID": wineID, "reviewID": reviewID}, {"_id": 0}
+    )
+
+    if review == None:
+        response = JSONResponse(content="No review exists")
+        response.status_code = 204
+        return response
+
+    return {
+        "wineID": wineID,
+        "reviewID": reviewID,
+        "totalComments": len(review["comments"]),
+    }
+
+
 @router.get("/{wineID}/reviews")
 async def get_wine_reviews(
     request: Request, wineID: int = -1, num: int = 20, sort: int = 1, page: int = 1
@@ -329,6 +355,32 @@ async def get_wine_reviews(
         response.status_code = 204
         return response
     return docs
+
+
+@router.get("/{wineID}/reviews/{reviewID}/comments")
+async def get_wine_review_comments(
+    request: Request,
+    wineID: int = -1,
+    reviewID: int = -1,
+    num: int = 20,
+    sort: int = 1,
+    page: int = 1,
+):
+    toSkip = num * (page - 1)
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    review = await request.app.mongodb["review"].find_one(
+        {"wineID": wineID, "reviewID": reviewID}, {"_id": 0}
+    )
+
+    if review == 0:
+        response = JSONResponse(content="No reviews exists")
+        response.status_code = 204
+        return response
+    return review["comments"][toSkip : toSkip + num]
 
 
 @router.post("/{wineID}/reviews")
@@ -370,7 +422,7 @@ async def post_wine_reviews(
         return response
 
 
-@router.post("/{wineID}/reviews/{reviewID}/comment")
+@router.post("/{wineID}/reviews/{reviewID}/comments")
 async def post_wine_reviews(
     request: Request,
     wineID: int = -1,
@@ -450,7 +502,7 @@ async def update_review(
         response.status_code = 404
         return response
     updatedReview = await request.app.mongodb["review"].find_one_and_update(
-        {"reviewID": reviewID},
+        {"reviewID": reviewID, "userID": json_reviewInfo["userID"]},
         {
             "$set": {
                 "content": json_reviewInfo["content"],
@@ -466,7 +518,7 @@ async def update_review(
     )
     if updatedReview == None:
         response = JSONResponse(
-            content="An error occurred while creating new review object"
+            content="An error occurred while updating new review object"
         )
         response.status_code = 400
         return response
@@ -474,10 +526,69 @@ async def update_review(
         response = JSONResponse(
             content={
                 "reviewID": updatedReview["index"],
-                "lastUpdatedAt": json_reviewInfo["lastUpdatedAt"],
+                "lastUpdatedAt": updatedReview["lastUpdatedAt"],
             }
         )
-        response.status_code = 201
+        return response
+
+
+@router.put("/{wineID}/reviews/{reviewID}/comments/{commentID}")
+async def update_review_comment(
+    request: Request,
+    wineID: int = -1,
+    reviewID: int = -1,
+    commentID: int = -1,
+    commentInfo: CommentModel = Body(...),
+):
+    json_commentInfo = jsonable_encoder(commentInfo)
+    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
+    if wine == None:
+        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
+        response.status_code = 404
+        return response
+    user = await request.app.mongodb["user"].find_one(
+        {"userID": json_commentInfo["userID"]}, {"_id": 0}
+    )
+    if user == None:
+        response = JSONResponse(content="userID is invalid. No such user exists in DB")
+        response.status_code = 404
+        return response
+    updatedComment = await request.app.mongodb["review"].find_one_and_update(
+        {
+            "reviewID": reviewID,
+            "comments": {
+                "$elemMatch": {
+                    "userID": json_commentInfo["userID"],
+                    "commentID": json_commentInfo["commentID"],
+                }
+            },
+        },
+        {
+            "$set": {
+                "comments": {
+                    "content": json_commentInfo["content"],
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            }
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    if updatedComment == None:
+        response = JSONResponse(
+            content="An error occurred while updating new review object"
+        )
+        response.status_code = 400
+        return response
+    else:
+        response = JSONResponse(
+            content={
+                "commentID": updatedComment["index"],
+                "lastUpdatedAt": updatedComment["lastUpdatedAt"],
+            }
+        )
         return response
 
 
@@ -496,7 +607,7 @@ async def delete_wine_reviews(
         response.status_code = 404
         return response
     review = await request.app.mongodb["review"].find_one(
-        {"reviewID": reviewID}, {"_id": 0}
+        {"reviewID": reviewID, "userID": userID}, {"_id": 0}
     )
     if review == None:
         response = JSONResponse(
@@ -505,7 +616,7 @@ async def delete_wine_reviews(
         response.status_code = 404
         return response
     deleteReview = await request.app.mongodb["review"].find_one_and_update(
-        {"reviewID": reviewID},
+        {"reviewID": reviewID, "userID": userID},
         {
             "$set": {
                 "isDeleted": True,
@@ -534,7 +645,7 @@ async def delete_wine_reviews(
         return response
 
 
-@router.delete("/{wineID}/reviews/{reviewID}/comment/{commentID}")
+@router.delete("/{wineID}/reviews/{reviewID}/comments/{commentID}")
 async def delete_wine_review_comment(
     request: Request,
     wineID: int = -1,
@@ -562,16 +673,31 @@ async def delete_wine_review_comment(
         response.status_code = 404
         return response
 
-    appendComment = await request.app.mongodb["review"].find_one_and_update(
-        {"reviewID": reviewID},
+    deletedComment = await request.app.mongodb["review"].find_one_and_update(
         {
-            "$push": {"comments": json_commentInfo},
+            "reviewID": reviewID,
+            "comments": {
+                "$elemMatch": {
+                    "userID": userID,
+                    "commentID": commentID,
+                }
+            },
+        },
+        {
+            "$set": {
+                "comments": {
+                    "isDeleted": True,
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            }
         },
         {"_id": 0},
         return_document=ReturnDocument.AFTER,
     )
 
-    if appendComment == None:
+    if deletedComment == None:
         response = JSONResponse(
             content="An error occurred while creating new review object"
         )
@@ -580,9 +706,9 @@ async def delete_wine_review_comment(
     else:
         response = JSONResponse(
             content={
-                "commentID": newCommentID["index"],
-                "createdAt": json_commentInfo["createdAt"],
+                "commentID": commentID,
+                "isDeleted": deletedComment["isDeleted"],
+                "lastUpdatedAt": deletedComment["lastUpdatedAt"],
             }
         )
-        response.status_code = 201
         return response

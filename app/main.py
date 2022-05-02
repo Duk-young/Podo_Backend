@@ -4,7 +4,14 @@ from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
 import boto3
-from .routers import winelists, wines, users, supportTickets
+from .routers import (
+    verificationTickets,
+    winelists,
+    wines,
+    users,
+    supportTickets,
+    s3upload,
+)
 
 # from .consts import origins
 # from .routers import form, story, user, s3upload, transaction, store
@@ -52,6 +59,8 @@ app.include_router(wines.router)
 app.include_router(winelists.router)
 app.include_router(users.router)
 app.include_router(supportTickets.router)
+app.include_router(verificationTickets.router)
+app.include_router(s3upload.router)
 
 
 @app.get("/")

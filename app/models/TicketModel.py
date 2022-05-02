@@ -22,7 +22,7 @@ class VerificationTicketModel(BaseModel):
     adminID: int = Field(None)
     verificationImage: str = Field("")
     userExplanation: str = Field("")
-    status: int = Field(0)
+    status: int = Field(2)
     adminFeedback: str = Field("")
     isDeleted: bool = Field(False)
     createdAt: datetime = Field(

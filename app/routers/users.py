@@ -34,6 +34,7 @@ router = APIRouter(
 
 @router.get("/login")
 async def user_login(request: Request, access_token: str = ""):
+    # TODO 에러핸들링 / 로그인시 프로필사진 업뎃
     async with httpx.AsyncClient() as client:
         url = (
             "https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + access_token

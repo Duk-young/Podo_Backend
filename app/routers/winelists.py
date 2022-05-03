@@ -27,6 +27,7 @@ router = APIRouter(
     responses={
         404: {"description": "Not found"},
         403: {"description": "Operation forbidden"},
+        204: {"description": "No content found"},
     },
 )
 
@@ -87,18 +88,6 @@ async def search_winelists(
         )
         docs = await winelists.to_list(None)
         return docs
-
-
-@router.get("/{winelistID}")
-async def get_winelist(request: Request, winelistID: int = -1):
-    winelist = await request.app.mongodb["winelist"].find_one(
-        {"winelistID": winelistID}, {"_id": 0}
-    )
-    if winelist == None:
-        response = JSONResponse(content="No such winelist exists")
-        response.status_code = 404
-        return response
-    return winelist
 
 
 @router.get("/recommended")
@@ -179,6 +168,18 @@ async def restore_winelist(request: Request, winelistID: int = -1, userID: int =
             "lastUpdatedAt": winelist["lastUpdatedAt"],
         }
     return "Failed to restore winelist."
+
+
+@router.get("/{winelistID}")
+async def get_winelist(request: Request, winelistID: int = -1):
+    winelist = await request.app.mongodb["winelist"].find_one(
+        {"winelistID": winelistID}, {"_id": 0}
+    )
+    if winelist == None:
+        response = JSONResponse(content="No such winelist exists")
+        response.status_code = 404
+        return response
+    return winelist
 
 
 @router.put("/{winelistID}")

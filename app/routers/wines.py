@@ -102,21 +102,6 @@ async def total_wines(request: Request):
     return {"totalWines": len(docs)}
 
 
-@router.get("/{wineID}")
-async def get_wine(request: Request, wineID: int):
-    wine = await request.app.mongodb["wine"].find_one_and_update(
-        {"wineID": wineID},
-        {"$inc": {"views": 1}},
-        {"_id": 0},
-        return_document=ReturnDocument.AFTER,
-    )
-    if wine == None:
-        response = JSONResponse(content="No such wine exists")
-        response.status_code = 404
-        return response
-    return wine
-
-
 @router.get("/recommended")
 async def get_recommended_wines(request: Request, userID: int = -1, num: int = 10):
     # TODO
@@ -195,6 +180,21 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
             "lastUpdatedAt": wine["lastUpdatedAt"],
         }
     return "Failed to restore wine."
+
+
+@router.get("/{wineID}")
+async def get_wine(request: Request, wineID: int):
+    wine = await request.app.mongodb["wine"].find_one_and_update(
+        {"wineID": wineID},
+        {"$inc": {"views": 1}},
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    if wine == None:
+        response = JSONResponse(content="No such wine exists")
+        response.status_code = 404
+        return response
+    return wine
 
 
 @router.put("/{wineID}")

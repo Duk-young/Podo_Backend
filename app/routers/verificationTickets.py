@@ -26,6 +26,7 @@ router = APIRouter(
     responses={
         404: {"description": "Not found"},
         403: {"description": "Operation forbidden"},
+        204: {"description": "No content found"},
     },
 )
 
@@ -77,32 +78,7 @@ async def get_verification_tickets(
     return docs
 
 
-@router.get("/{ticketID}")
-async def get_verification_tickets(
-    request: Request, userID: int = -1, ticketID: int = -1
-):
-    requester = await request.app.mongodb["user"].find_one(
-        {"userID": userID}, {"_id": 0}
-    )
-    verificationTicket = request.app.mongodb["verificationTicket"].find(
-        {"ticketID": ticketID}, {"_id": 0}
-    )
-    if verificationTicket == None:
-        response = JSONResponse(content="No such verification ticket exists")
-        response.status_code = 404
-        return response
-    if requester == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    if requester["status"] != 2 and verificationTicket["userID"] != userID:
-        response = JSONResponse(content="User is not authorized for this action")
-        response.status_code = 401
-        return response
-    return verificationTicket
-
-
-@router.post("/")
+@router.post("")
 async def post_verification_ticket(
     request: Request, ticketInfo: VerificationTicketModel = Body(...)
 ):
@@ -133,6 +109,31 @@ async def post_verification_ticket(
         }
     )
     return response
+
+
+@router.get("/{ticketID}")
+async def get_verification_tickets(
+    request: Request, userID: int = -1, ticketID: int = -1
+):
+    requester = await request.app.mongodb["user"].find_one(
+        {"userID": userID}, {"_id": 0}
+    )
+    verificationTicket = request.app.mongodb["verificationTicket"].find(
+        {"ticketID": ticketID}, {"_id": 0}
+    )
+    if verificationTicket == None:
+        response = JSONResponse(content="No such verification ticket exists")
+        response.status_code = 404
+        return response
+    if requester == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    if requester["status"] != 2 and verificationTicket["userID"] != userID:
+        response = JSONResponse(content="User is not authorized for this action")
+        response.status_code = 401
+        return response
+    return verificationTicket
 
 
 @router.put("/{tickeID}")

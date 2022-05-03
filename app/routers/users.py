@@ -26,6 +26,7 @@ router = APIRouter(
     responses={
         404: {"description": "Not found"},
         403: {"description": "Operation forbidden"},
+        204: {"description": "No content found"},
     },
 )
 
@@ -66,6 +67,25 @@ async def get_users(request: Request, userID: int = -1, num: int = 100, page: in
     return docs
 
 
+@router.get("/username-duplicate-check")
+async def username_duplicate_check(request: Request, username: str = ""):
+    user = await request.app.mongodb["user"].find_one(
+        {"username": username}, {"_id": 0}
+    )
+    if user == None:
+        return {"username": username, "duplicate": False}
+    return {"username": username, "duplicate": True}
+
+
+@router.get("/email-duplicate-check")
+async def email_duplicate_check(request: Request, email: str = ""):
+    user = await request.app.mongodb["user"].find_one({"email": email}, {"_id": 0})
+    print(user)
+    if user == None:
+        return {"email": email, "duplicate": False}
+    return {"email": email, "duplicate": True}
+
+
 @router.get("/{userID}")
 async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
     requester = await request.app.mongodb["user"].find_one(
@@ -85,22 +105,6 @@ async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
         response.status_code = 404
         return response
     return user
-
-
-@router.get("/username-duplicate-check")
-async def username_duplicate_check(request: Request, username: str = ""):
-    user = request.app.mongodb["user"].find_one({"username": username}, {"_id": 0})
-    if user == None:
-        return {"username": username, "duplicate": False}
-    return {"username": username, "duplicate": True}
-
-
-@router.get("/email-duplicate-check")
-async def username_duplicate_check(request: Request, email: str = ""):
-    user = request.app.mongodb["user"].find_one({"email": email}, {"_id": 0})
-    if user == None:
-        return {"email": email, "duplicate": False}
-    return {"email": email, "duplicate": True}
 
 
 @router.get("/{userID}/reviews")

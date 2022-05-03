@@ -40,16 +40,18 @@ async def user_login(request: Request, access_token: str = ""):
         )
         response = await client.get(url)
         response = response.json()
+        print(response["email"])
         user = await request.app.mongodb["user"].find_one(
             {"email": response["email"]}, {"_id": 0}
         )
+        print(user)
         if user == None:
             return {"userID": -1}
         return {
             "userID": user["userID"],
             "username": user["username"],
             "email": user["email"],
-            "profileImage": user["profileImage"],
+            "profileImage": response["picture"],
         }
 
 

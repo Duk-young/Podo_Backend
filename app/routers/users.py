@@ -19,6 +19,7 @@ from ..models.UserModel import UserModel
 from typing import List, Optional
 from tempfile import TemporaryFile
 from datetime import datetime
+import httpx
 
 router = APIRouter(
     prefix="/users",
@@ -29,6 +30,27 @@ router = APIRouter(
         204: {"description": "No content found"},
     },
 )
+
+
+@router.get("/login")
+async def user_login(request: Request, access_token: str = ""):
+    async with httpx.AsyncClient() as client:
+        url = (
+            "https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + access_token
+        )
+        response = await client.get(url)
+        response = response.json()
+        user = await request.app.mongodb["user"].find_one(
+            {"email": response["email"]}, {"_id": 0}
+        )
+        if user == None:
+            return {"userID": -1}
+        return {
+            "userID": user["userID"],
+            "username": user["username"],
+            "email": user["email"],
+            "profileImage": user["profileImage"],
+        }
 
 
 @router.get("/total")
@@ -84,6 +106,53 @@ async def email_duplicate_check(request: Request, email: str = ""):
     if user == None:
         return {"email": email, "duplicate": False}
     return {"email": email, "duplicate": True}
+
+
+@router.get("/my-winelist-comment")
+async def get_user_winelist_review(
+    request: Request, userID: int = -1, num: int = 20, page: int = 1
+):
+    # 보류
+    toSkip = num * (page - 1)
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    reviews = (
+        request.app.mongodb["review"]
+        .find({"userID": userID}, {"_id": 0})
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await reviews.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content="No more reviews to fetch")
+        response.status_code = 204
+        return response
+    return docs
+
+
+@router.post("")
+async def post_user(request: Request, userInfo: UserModel = Body(...)):
+    json_userInfo = jsonable_encoder(userInfo)
+    newUserID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
+        {"_id": "user"}, {"$inc": {"index": 1}}, {"index": 1}
+    )
+    json_userInfo["userID"] = newUserID["index"]
+    newUser = await request.app.mongodb["user"].insert_one(json_userInfo)
+    if newUser == None:
+        response = JSONResponse(content="RequesterID : No such user exists")
+        response.status_code = 404
+        return response
+    response = JSONResponse(
+        content={
+            "userID": newUserID["index"],
+            "createdAt": json_userInfo["createdAt"],
+        }
+    )
+    response.status_code = 201
+    return response
 
 
 @router.get("/{userID}")
@@ -213,53 +282,6 @@ async def get_listof_user_liked_winelist(
     )
     docs = await winelists.to_list(None)
     return docs
-
-
-@router.get("/my-winelist-comment")
-async def get_user_winelist_review(
-    request: Request, userID: int = -1, num: int = 20, page: int = 1
-):
-    # 보류
-    toSkip = num * (page - 1)
-    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
-    if user == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    reviews = (
-        request.app.mongodb["review"]
-        .find({"userID": userID}, {"_id": 0})
-        .skip(toSkip)
-        .limit(num)
-    )
-    docs = await reviews.to_list(None)
-    if len(docs) == 0:
-        response = JSONResponse(content="No more reviews to fetch")
-        response.status_code = 204
-        return response
-    return docs
-
-
-@router.post("")
-async def post_user(request: Request, userInfo: UserModel = Body(...)):
-    json_userInfo = jsonable_encoder(userInfo)
-    newUserID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
-        {"_id": "user"}, {"$inc": {"index": 1}}, {"index": 1}
-    )
-    json_userInfo["userID"] = newUserID["index"]
-    newUser = await request.app.mongodb["user"].insert_one(json_userInfo)
-    if newUser == None:
-        response = JSONResponse(content="RequesterID : No such user exists")
-        response.status_code = 404
-        return response
-    response = JSONResponse(
-        content={
-            "userID": newUserID["index"],
-            "createdAt": json_userInfo["createdAt"],
-        }
-    )
-    response.status_code = 201
-    return response
 
 
 @router.post("/{userID}/like-wine")

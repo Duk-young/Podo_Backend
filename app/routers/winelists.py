@@ -97,13 +97,11 @@ async def get_recommended_winelists(request: Request, userID: int = -1, num: int
 
 
 @router.post("")
-async def post_winelist(
-    request: Request, userID: int = -1, winelistInfo: WinelistModel = Body(...)
-):
+async def post_winelist(request: Request, winelistInfo: WinelistModel = Body(...)):
     json_winelistInfo = jsonable_encoder(winelistInfo)
     print(json_winelistInfo)
     requester = await request.app.mongodb["user"].find_one(
-        {"userID": userID}, {"_id": 0}
+        {"userID": json_winelistInfo["userID"]}, {"_id": 0}
     )
     if requester == None:
         response = JSONResponse(content="No such user exists")
@@ -271,3 +269,8 @@ async def delete_winelist(request: Request, winelistID: int = -1, userID: int = 
             "lastUpdatedAt": winelist["lastUpdatedAt"],
         }
     return "Failed to restore winelist."
+
+
+@router.post("/winelist-population")
+async def populate_winelist(request: Request, num: int = 50):
+    return 0

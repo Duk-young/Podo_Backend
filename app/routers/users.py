@@ -20,6 +20,8 @@ from typing import List, Optional
 from tempfile import TemporaryFile
 from datetime import datetime
 import httpx
+import random
+import time
 
 router = APIRouter(
     prefix="/users",
@@ -59,6 +61,10 @@ async def user_login(request: Request, access_token: str = ""):
 @router.get("/total")
 async def get_total_users(request: Request):
     users = request.app.mongodb["user"].find({}, {"_id": 0})
+    if users == None:
+        response = JSONResponse(content="No user found")
+        response.status_code = 204
+        return response
     docs = await users.to_list(None)
     return {"totalUsers": len(docs)}
 
@@ -616,3 +622,94 @@ async def delete_wine(request: Request, userID: int = -1, adminID: int = -1):
         "isDeleted": user["isDeleted"],
         "lastUpdatedAt": user["lastUpdatedAt"],
     }
+
+
+@router.post("/user-population")
+async def user_population(request: Request, num: int = 50):
+    for i in range(num):
+        newUserID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
+            {"_id": "user"}, {"$inc": {"index": 1}}, {"index": 1}
+        )
+        userJson = {
+            "userID": newUserID["index"],
+            "username": "testUser" + str(i),
+            "email": "testEmail" + str(i) + "@test.com",
+            "profileImage": "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/Archive/duck/duck_1.jpg",
+            "phone": "",
+            "gender": "M",
+            "status": 0,
+            "likedWines": [],
+            "likedWinelists": [],
+            "isDeleted": False,
+            "createdAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "lastUpdatedAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "tags": [],
+            "followings": [],
+            "followers": [],
+        }
+        newUser = await request.app.mongodb["user"].insert_one(userJson)
+        if newUser == None:
+            raise HTTPException(400)
+        time.sleep(1)
+        await review_population(request, userID=newUserID["index"])
+        print("userID", newUserID["index"], "has been added to database.")
+
+
+@router.post("/review-population")
+async def review_population(request: Request, userID: int = -1, num: int = 20):
+
+    for i in range(num):
+        newReviewID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
+            {"_id": "review"}, {"$inc": {"index": 1}}, {"index": 1}
+        )
+        reviewJson = {
+            "wineID": random.randint(0, 3000),
+            "reviewID": newReviewID["index"],
+            "userID": userID,
+            "username": "testUser" + str(i),
+            "rating": random.randint(0, 5),
+            "content": "This is good wine by user" + str(userID),
+            "isDeleted": False,
+            "createdAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "lastUpdatedAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "tags": [],
+            "comments": [],
+        }
+        newReview = await request.app.mongodb["review"].insert_one(reviewJson)
+        if newReview == None:
+            raise HTTPException(400)
+        time.sleep(1)
+        await comment_population(
+            request=request, userID=userID, reviewID=newReviewID["index"]
+        )
+        print("reviewID", newReviewID["index"], "has been added to database.")
+
+
+@router.post("/comment-population")
+async def comment_population(
+    request: Request, userID: int = -1, reviewID: int = -1, num: int = 10
+):
+    number = random.randint(0, num)
+    for i in range(number):
+        newCommentID = await request.app.mongodb[
+            "auto_incrementer"
+        ].find_one_and_update({"_id": "comment"}, {"$inc": {"index": 1}}, {"index": 1})
+        commentJson = {
+            "commentID": newCommentID["index"],
+            "userID": userID,
+            "content": "Thank you for the helpful review" + str(userID),
+            "createdAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "lastUpdatedAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "isDeleted": False,
+        }
+        appendComment = await request.app.mongodb["review"].find_one_and_update(
+            {"reviewID": reviewID},
+            {
+                "$push": {"comments": commentJson},
+            },
+            {"_id": 0},
+            return_document=ReturnDocument.AFTER,
+        )
+        if appendComment == None:
+            raise HTTPException(400)
+        print("commentID", newCommentID["index"], "has been added to database.")

@@ -14,7 +14,6 @@ from .routers import (
 )
 
 # from .consts import origins
-# from .routers import form, story, user, s3upload, transaction, store
 import requests
 import json
 
@@ -65,7 +64,7 @@ app.include_router(s3upload.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return {"current DB": RUNTIME_ENV}
 
 
 @app.get("/dbtest")

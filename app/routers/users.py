@@ -165,7 +165,7 @@ async def post_user(request: Request, userInfo: UserModel = Body(...)):
     return response
 
 
-@router.get("/{userID}")
+@router.get("/all-fields/{userID}")
 async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
     requester = await request.app.mongodb["user"].find_one(
         {"userID": requesterID}, {"_id": 0}
@@ -174,11 +174,34 @@ async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
         response = JSONResponse(content="RequesterID : No such user exists")
         response.status_code = 404
         return response
-    if requester["status"] != 2 or userID != requesterID:
+    if requester["status"] != 2 and userID != requesterID:
         response = JSONResponse(content="Requester is not authorized for this action")
         response.status_code = 401
         return response
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="userID : No such user exists")
+        response.status_code = 404
+        return response
+    return user
+
+
+@router.get("/{userID}")
+async def get_user(request: Request, userID: int = -1):
+    user = await request.app.mongodb["user"].find_one(
+        {"userID": userID},
+        {
+            "_id": 0,
+            "userID": 1,
+            "profileImage": 1,
+            "status": 1,
+            "likedWines": 1,
+            "likedWinelists": 1,
+            "tags": 1,
+            "followings": 1,
+            "followers": 1,
+        },
+    )
     if user == None:
         response = JSONResponse(content="userID : No such user exists")
         response.status_code = 404

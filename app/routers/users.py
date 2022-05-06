@@ -174,7 +174,7 @@ async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
         response = JSONResponse(content="RequesterID : No such user exists")
         response.status_code = 404
         return response
-    if requester["status"] != 2:
+    if requester["status"] != 2 or userID != requesterID:
         response = JSONResponse(content="Requester is not authorized for this action")
         response.status_code = 401
         return response

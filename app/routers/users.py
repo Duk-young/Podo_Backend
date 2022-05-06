@@ -54,6 +54,7 @@ async def user_login(request: Request, access_token: str = ""):
             "userID": user["userID"],
             "username": user["username"],
             "email": user["email"],
+            "status": user["status"],
             "profileImage": response["picture"],
         }
 

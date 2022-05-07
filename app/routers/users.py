@@ -193,6 +193,7 @@ async def get_user(request: Request, userID: int = -1):
         {
             "_id": 0,
             "userID": 1,
+            "username": 1,
             "profileImage": 1,
             "status": 1,
             "likedWines": 1,

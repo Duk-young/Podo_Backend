@@ -104,8 +104,8 @@ async def post_verification_ticket(
         return response
     response = JSONResponse(
         content={
-            "ticketID": newverificationTicket["ticketID"],
-            "createdAt": newverificationTicket["createdAt"],
+            "ticketID": newTicketID["index"],
+            "createdAt": json_ticketInfo["createdAt"],
         }
     )
     return response

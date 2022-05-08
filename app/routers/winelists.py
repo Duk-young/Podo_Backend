@@ -45,7 +45,6 @@ async def search_winelists(
     keyword: str = "",
     num: int = 10,
     page: int = 1,
-    minRating: int = 0,
     tags: list[str] = Query([]),
     sort: int = 1,
 ):
@@ -53,33 +52,26 @@ async def search_winelists(
     toSkip = num * (page - 1)
     winelists = None
     if len(tags) == 0:
-        winelists = (
-            request.app.mongodb["winelist"]
-            .find(
-                {
-                    "$and": [
-                        {"rating": {"$gte": minRating}},
-                        {"isDeleted": False},
-                    ],
-                    "title": {"$regex": keyword, "$options": "i"},
-                },
-                {"_id": 0},
-            )
-            .sort("_id", -1)
-            .skip(toSkip)
-            .limit(num)
+        winelists = request.app.mongodb["winelist"].find(
+            {
+                "$and": [
+                    {"isDeleted": False},
+                    {"title": {"$regex": keyword, "$options": "i"}},
+                ],
+            },
+            {"_id": 0},
         )
+        print(winelists)
     else:
         winelists = (
             request.app.mongodb["winelist"]
             .find(
                 {
                     "$and": [
-                        {"rating": {"$gte": minRating}},
                         {"isDeleted": False},
                         {"tags": {"$in": tags}},
+                        {"title": {"$regex": keyword, "$options": "i"}},
                     ],
-                    "title": {"$regex": keyword, "$options": "i"},
                 },
                 {"_id": 0},
             )
@@ -87,8 +79,8 @@ async def search_winelists(
             .skip(toSkip)
             .limit(num)
         )
-        docs = await winelists.to_list(None)
-        return docs
+    docs = await winelists.to_list(None)
+    return docs
 
 
 @router.get("/recommended")

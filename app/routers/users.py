@@ -469,7 +469,7 @@ async def like_user(
             user = await request.app.mongodb["user"].find_one_and_update(
                 {"userID": userID},
                 {
-                    "$push": {"followings": targetUserID},
+                    "$pull": {"followings": targetUserID},
                     "$set": {
                         "lastUpdatedAt": datetime.now()
                         .astimezone()
@@ -483,7 +483,7 @@ async def like_user(
             user = await request.app.mongodb["user"].find_one_and_update(
                 {"userID": userID},
                 {
-                    "$pull": {"followings": targetUserID},
+                    "$push": {"followings": targetUserID},
                     "$set": {
                         "lastUpdatedAt": datetime.now()
                         .astimezone()
@@ -498,7 +498,7 @@ async def like_user(
             user = await request.app.mongodb["user"].find_one_and_update(
                 {"userID": userID},
                 {
-                    "$push": {"followers": targetUserID},
+                    "$pull": {"followers": targetUserID},
                     "$set": {
                         "lastUpdatedAt": datetime.now()
                         .astimezone()
@@ -512,7 +512,7 @@ async def like_user(
             user = await request.app.mongodb["user"].find_one_and_update(
                 {"userID": userID},
                 {
-                    "$pull": {"followers": targetUserID},
+                    "$push": {"followers": targetUserID},
                     "$set": {
                         "lastUpdatedAt": datetime.now()
                         .astimezone()

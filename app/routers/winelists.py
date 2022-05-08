@@ -49,6 +49,7 @@ async def search_winelists(
     tags: list[str] = Query([]),
     sort: int = 1,
 ):
+    # TODO 정렬
     toSkip = num * (page - 1)
     winelists = None
     if len(tags) == 0:
@@ -60,7 +61,7 @@ async def search_winelists(
                         {"rating": {"$gte": minRating}},
                         {"isDeleted": False},
                     ],
-                    "name": {"$regex": keyword, "$options": "i"},
+                    "title": {"$regex": keyword, "$options": "i"},
                 },
                 {"_id": 0},
             )
@@ -78,7 +79,7 @@ async def search_winelists(
                         {"isDeleted": False},
                         {"tags": {"$in": tags}},
                     ],
-                    "name": {"$regex": keyword, "$options": "i"},
+                    "title": {"$regex": keyword, "$options": "i"},
                 },
                 {"_id": 0},
             )

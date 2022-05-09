@@ -48,36 +48,88 @@ async def search_winelists(
     tags: list[str] = Query([]),
     sort: int = 1,
 ):
-    # TODO 정렬
+    # TODO 정렬, 와인이미지
     toSkip = num * (page - 1)
     winelists = None
     if len(tags) == 0:
-        winelists = request.app.mongodb["winelist"].find(
-            {
-                "$and": [
-                    {"isDeleted": False},
-                    {"title": {"$regex": keyword, "$options": "i"}},
-                ],
-            },
-            {"_id": 0},
-        )
-        print(winelists)
-    else:
         winelists = (
-            request.app.mongodb["winelist"]
-            .find(
-                {
-                    "$and": [
-                        {"isDeleted": False},
-                        {"tags": {"$in": tags}},
-                        {"title": {"$regex": keyword, "$options": "i"}},
-                    ],
-                },
-                {"_id": 0},
+            request.app.mongodb["winelist"].aggregate(
+                [
+                    {
+                        "$match": {
+                            "isDeleted": False,
+                            "title": {"$regex": keyword, "$options": "i"},
+                        },
+                    },
+                    {  # lookup for reviews
+                        "$lookup": {
+                            "from": "wine",
+                            "localField": "wines.wineID",
+                            "foreignField": "wineID",
+                            "pipeline": [
+                                {
+                                    "$project": {
+                                        "_id": 0,
+                                        "wineID": 1,
+                                        "name": 1,
+                                        "images": 1,
+                                    }
+                                }
+                            ],
+                            "as": "wines",
+                        }
+                    },
+                    {
+                        "$project": {
+                            "_id": 0,
+                        }
+                    },
+                    # {"$sort": {sortingOption: -1}},
+                    {"$skip": toSkip},
+                    {"$limit": num},
+                ]
             )
-            .sort("_id", -1)
-            .skip(toSkip)
-            .limit(num)
+            # .sort("_id", -1)
+            # .skip(toSkip)
+            # .limit(num)
+        )
+    else:
+        winelists = request.app.mongodb["winelist"].aggregate(
+            [
+                {
+                    "$match": {
+                        "isDeleted": False,
+                        "title": {"$regex": keyword, "$options": "i"},
+                        "tags": {"$in": tags},
+                    },
+                },
+                {  # lookup for reviews
+                    "$lookup": {
+                        "from": "wine",
+                        "localField": "wines.wineID",
+                        "foreignField": "wineID",
+                        "pipeline": [
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                    "wineID": 1,
+                                    "name": 1,
+                                    "images": 1,
+                                }
+                            }
+                        ],
+                        "as": "wines",
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                    }
+                },
+                # {"$sort": {sortingOption: -1}},
+                {"$skip": toSkip},
+                {"$limit": num},
+            ]
         )
     docs = await winelists.to_list(None)
     return docs
@@ -163,14 +215,47 @@ async def restore_winelist(request: Request, winelistID: int = -1, userID: int =
 
 @router.get("/{winelistID}")
 async def get_winelist(request: Request, winelistID: int = -1):
-    winelist = await request.app.mongodb["winelist"].find_one(
-        {"winelistID": winelistID}, {"_id": 0}
+    # TODO 와인이미지 서칭
+    winelist = request.app.mongodb["winelist"].aggregate(
+        [
+            {
+                "$match": {
+                    "isDeleted": False,
+                    "winelistID": winelistID,
+                },
+            },
+            {  # lookup for reviews
+                "$lookup": {
+                    "from": "wine",
+                    "localField": "wines.wineID",
+                    "foreignField": "wineID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "wineID": 1,
+                                "name": 1,
+                                "images": 1,
+                            }
+                        }
+                    ],
+                    "as": "wines",
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                }
+            },
+        ]
     )
     if winelist == None:
         response = JSONResponse(content="No such winelist exists")
         response.status_code = 404
         return response
-    return winelist
+    doc = await winelist.to_list(None)
+    doc = doc[0]
+    return doc
 
 
 @router.put("/{winelistID}")

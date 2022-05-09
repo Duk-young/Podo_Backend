@@ -479,11 +479,37 @@ async def like_user(
                 {"_id": 0},
                 return_document=ReturnDocument.AFTER,
             )
+            targetUserAppend = await request.app.mongodb["user"].find_one_and_update(
+                {"userID": targetUserID},
+                {
+                    "$pull": {"followers": userID},
+                    "$set": {
+                        "lastUpdatedAt": datetime.now()
+                        .astimezone()
+                        .strftime("%Y-%m-%d %H:%M:%S"),
+                    },
+                },
+                {"_id": 0},
+                return_document=ReturnDocument.AFTER,
+            )
         else:
             user = await request.app.mongodb["user"].find_one_and_update(
                 {"userID": userID},
                 {
                     "$push": {"followings": targetUserID},
+                    "$set": {
+                        "lastUpdatedAt": datetime.now()
+                        .astimezone()
+                        .strftime("%Y-%m-%d %H:%M:%S"),
+                    },
+                },
+                {"_id": 0},
+                return_document=ReturnDocument.AFTER,
+            )
+            targetUserAppend = await request.app.mongodb["user"].find_one_and_update(
+                {"userID": targetUserID},
+                {
+                    "$push": {"followers": userID},
                     "$set": {
                         "lastUpdatedAt": datetime.now()
                         .astimezone()
@@ -508,11 +534,10 @@ async def like_user(
                 {"_id": 0},
                 return_document=ReturnDocument.AFTER,
             )
-        else:
-            user = await request.app.mongodb["user"].find_one_and_update(
-                {"userID": userID},
+            targetUserAppend = await request.app.mongodb["user"].find_one_and_update(
+                {"userID": targetUserID},
                 {
-                    "$push": {"followers": targetUserID},
+                    "$pull": {"following": userID},
                     "$set": {
                         "lastUpdatedAt": datetime.now()
                         .astimezone()
@@ -522,6 +547,37 @@ async def like_user(
                 {"_id": 0},
                 return_document=ReturnDocument.AFTER,
             )
+        else:
+            response = JSONResponse(content="target user is not in the follower list")
+            response.status_code = 404
+            return response
+        # else:
+        #     user = await request.app.mongodb["user"].find_one_and_update(
+        #         {"userID": userID},
+        #         {
+        #             "$push": {"followers": targetUserID},
+        #             "$set": {
+        #                 "lastUpdatedAt": datetime.now()
+        #                 .astimezone()
+        #                 .strftime("%Y-%m-%d %H:%M:%S"),
+        #             },
+        #         },
+        #         {"_id": 0},
+        #         return_document=ReturnDocument.AFTER,
+        #     )
+        #     targetUserAppend = await request.app.mongodb["user"].find_one_and_update(
+        #         {"userID": targetUserID},
+        #         {
+        #             "$push": {"following": userID},
+        #             "$set": {
+        #                 "lastUpdatedAt": datetime.now()
+        #                 .astimezone()
+        #                 .strftime("%Y-%m-%d %H:%M:%S"),
+        #             },
+        #         },
+        #         {"_id": 0},
+        #         return_document=ReturnDocument.AFTER,
+        #     )
     if user == None:
         response = JSONResponse(content="An error occurred while updating user")
         response.status_code = 404

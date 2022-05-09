@@ -18,8 +18,6 @@ from fastapi.encoders import jsonable_encoder
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 from ..models.WineModel import WineModel
 from ..models.ReviewModel import ReviewModel, CommentModel
-from typing import List, Optional
-from tempfile import TemporaryFile
 from datetime import datetime
 
 router = APIRouter(
@@ -184,6 +182,7 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
 
 @router.get("/{wineID}")
 async def get_wine(request: Request, wineID: int):
+    # TODO DOC UPDATE
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {"$inc": {"views": 1}},
@@ -437,7 +436,7 @@ async def post_wine_reviews(
         {"_id": "review"}, {"$inc": {"index": 1}}, {"index": 1}
     )
     json_reviewInfo["reviewID"] = newReviewID["index"]
-    newReview = await request.app.mongodb["review"].insert(json_reviewInfo)
+    newReview = await request.app.mongodb["review"].insert_one(json_reviewInfo)
     if newReview == None:
         response = JSONResponse(
             content="An error occurred while creating new review object"
@@ -451,8 +450,10 @@ async def post_wine_reviews(
                 "createdAt": json_reviewInfo["createdAt"],
             }
         )
-        response.status_code = 201
-        return response
+    # update rating
+    await update_rating(request, wineID=wineID)
+    response.status_code = 201
+    return response
 
 
 @router.post("/{wineID}/reviews/{reviewID}/comments")
@@ -556,6 +557,7 @@ async def update_review(
         response.status_code = 400
         return response
     else:
+        await update_rating(request, wineID=wineID)
         response = JSONResponse(
             content={
                 "reviewID": updatedReview["index"],
@@ -668,6 +670,7 @@ async def delete_wine_reviews(
         response.status_code = 400
         return response
     else:
+        await update_rating(request, wineID=wineID)
         response = JSONResponse(
             content={
                 "reviewID": deleteReview["reviewID"],
@@ -745,3 +748,38 @@ async def delete_wine_review_comment(
             }
         )
         return response
+
+
+async def update_rating(request: Request, wineID: int = -1):
+    reviews = request.app.mongodb["review"].aggregate(
+        [
+            {
+                "$match": {
+                    "wineID": wineID,
+                    "isDeleted": False,
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "rating": {"$sum": "$rating"},
+                    "totalReviews": {"$sum": 1},
+                },
+            },
+        ]
+    )
+    reviews = await reviews.to_list(None)
+    reviews = reviews[0]
+    totalRating = float(
+        "{:.2f}".format(float(reviews["rating"]) / int(reviews["totalReviews"]))
+    )
+    wine = await request.app.mongodb["wine"].find_one_and_update(
+        {"wineID": wineID},
+        {"$set": {"rating": totalRating}},
+        {"_id": 0},
+    )
+    if wine == None:
+        response = JSONResponse(content="An error occured during the update")
+        response.status_code = 400
+        return response
+    return

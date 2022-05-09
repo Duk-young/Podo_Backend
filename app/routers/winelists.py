@@ -55,8 +55,6 @@ async def search_winelists(
         winelists = (
             request.app.mongodb["winelist"].aggregate(
                 [  # {"$sort": {sortingOption: -1}},
-                    {"$skip": toSkip},
-                    {"$limit": num},
                     {
                         "$match": {
                             "isDeleted": False,
@@ -103,6 +101,8 @@ async def search_winelists(
                             "_id": 0,
                         }
                     },
+                    {"$skip": toSkip},
+                    {"$limit": num},
                 ]
             )
             # .sort("_id", -1)
@@ -112,8 +112,6 @@ async def search_winelists(
     else:
         winelists = request.app.mongodb["winelist"].aggregate(
             [  # {"$sort": {sortingOption: -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
                 {
                     "$match": {
                         "isDeleted": False,
@@ -161,6 +159,8 @@ async def search_winelists(
                         "_id": 0,
                     }
                 },
+                {"$skip": toSkip},
+                {"$limit": num},
             ]
         )
     docs = await winelists.to_list(None)

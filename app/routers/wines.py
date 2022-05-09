@@ -68,10 +68,9 @@ async def search_wines(
         wines = request.app.mongodb["wine"].aggregate(
             [
                 {"$sort": {"_id": -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
                 {
                     "$match": {
+                        "name": {"$regex": keyword, "$options": "i"},
                         "price": {"$gte": minPrice},
                         "price": {"$lte": maxPrice},
                         "rating": {"$gte": minRating},
@@ -104,16 +103,17 @@ async def search_wines(
                         "_id": 0,
                     }
                 },
+                {"$skip": toSkip},
+                {"$limit": num},
             ]
         )
     else:
         wines = request.app.mongodb["wine"].aggregate(
             [
                 {"$sort": {"_id": -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
                 {
                     "$match": {
+                        "name": {"$regex": keyword, "$options": "i"},
                         "price": {"$gte": minPrice},
                         "price": {"$lte": maxPrice},
                         "rating": {"$gte": minRating},
@@ -147,6 +147,8 @@ async def search_wines(
                         "_id": 0,
                     }
                 },
+                {"$skip": toSkip},
+                {"$limit": num},
             ]
         )
     docs = await wines.to_list(None)

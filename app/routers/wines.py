@@ -194,6 +194,38 @@ async def get_wine(request: Request, wineID: int):
         response = JSONResponse(content="No such wine exists")
         response.status_code = 404
         return response
+    wine = request.app.mongodb["wine"].aggregate(
+        [
+            {
+                "$match": {
+                    "isDeleted": False,
+                    "wineID": wineID,
+                },
+            },
+            {  # lookup for reviews
+                "$lookup": {
+                    "from": "review",
+                    "localField": "wineID",
+                    "foreignField": "wineID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                            }
+                        }
+                    ],
+                    "as": "reviews",
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                }
+            },
+        ]
+    )
+    wine = await wine.to_list(None)
+    wine = wine[0]
     return wine
 
 

@@ -182,7 +182,6 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
 
 @router.get("/{wineID}")
 async def get_wine(request: Request, wineID: int):
-    # TODO DOC UPDATE
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {"$inc": {"views": 1}},
@@ -435,6 +434,7 @@ async def post_wine_reviews(
     newReviewID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
         {"_id": "review"}, {"$inc": {"index": 1}}, {"index": 1}
     )
+    json_reviewInfo["wineID"] = wineID
     json_reviewInfo["reviewID"] = newReviewID["index"]
     newReview = await request.app.mongodb["review"].insert_one(json_reviewInfo)
     if newReview == None:

@@ -16,7 +16,7 @@ class CommentModel(BaseModel):
 
 
 class ReviewModel(BaseModel):
-    wineID: int = Field(...)
+    # wineID: int = Field(...)
     userID: int = Field(...)
     content: str = Field("")
     rating: float = Field(0)

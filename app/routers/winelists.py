@@ -20,6 +20,7 @@ from ..models.WinelistModel import WinelistModel
 from typing import List, Optional
 from tempfile import TemporaryFile
 from datetime import datetime
+import re
 
 router = APIRouter(
     prefix="/winelists",
@@ -109,13 +110,16 @@ async def search_winelists(
             # .limit(num)
         )
     else:
+        regexTags = []
+        for tag in tags:
+            regexTags.append(re.compile(tag, re.IGNORECASE))
         winelists = request.app.mongodb["winelist"].aggregate(
             [  # {"$sort": {sortingOption: -1}},
                 {
                     "$match": {
                         "isDeleted": False,
                         "title": {"$regex": keyword, "$options": "i"},
-                        "tags": {"$in": tags},
+                        "tags": {"$all": regexTags},
                     },
                 },
                 {"$skip": toSkip},

@@ -19,6 +19,7 @@ from starlette.status import HTTP_200_OK, HTTP_201_CREATED
 from ..models.WineModel import WineModel
 from ..models.ReviewModel import ReviewModel, CommentModel
 from datetime import datetime
+import re
 
 router = APIRouter(
     prefix="/wines",
@@ -107,6 +108,10 @@ async def search_wines(
             ]
         )
     else:
+        regexTags = []
+        for tag in tags:
+            regexTags.append(re.compile(tag, re.IGNORECASE))
+
         wines = request.app.mongodb["wine"].aggregate(
             [
                 {"$sort": {"_id": -1}},
@@ -117,7 +122,7 @@ async def search_wines(
                         "price": {"$lte": maxPrice},
                         "rating": {"$gte": minRating},
                         "isDeleted": False,
-                        "tags": {"$in": tags},
+                        "tags": {"$all": regexTags},
                     }
                 },
                 {"$skip": toSkip},

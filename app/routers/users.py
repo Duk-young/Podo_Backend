@@ -222,7 +222,7 @@ async def get_user_wine_review(
         return response
     reviews = (
         request.app.mongodb["review"]
-        .find({"userID": userID}, {"_id": 0})
+        .find({"userID": userID}, {"_id": 0, "comments": 0})
         .skip(toSkip)
         .limit(num)
     )

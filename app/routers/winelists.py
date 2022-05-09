@@ -61,6 +61,8 @@ async def search_winelists(
                             "title": {"$regex": keyword, "$options": "i"},
                         },
                     },
+                    {"$skip": toSkip},
+                    {"$limit": num},
                     {  # lookup for reviews
                         "$lookup": {
                             "from": "wine",
@@ -101,8 +103,6 @@ async def search_winelists(
                             "_id": 0,
                         }
                     },
-                    {"$skip": toSkip},
-                    {"$limit": num},
                 ]
             )
             # .sort("_id", -1)
@@ -119,6 +119,8 @@ async def search_winelists(
                         "tags": {"$in": tags},
                     },
                 },
+                {"$skip": toSkip},
+                {"$limit": num},
                 {  # lookup for reviews
                     "$lookup": {
                         "from": "wine",
@@ -159,8 +161,6 @@ async def search_winelists(
                         "_id": 0,
                     }
                 },
-                {"$skip": toSkip},
-                {"$limit": num},
             ]
         )
     docs = await winelists.to_list(None)

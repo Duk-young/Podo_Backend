@@ -77,6 +77,8 @@ async def search_wines(
                         "isDeleted": False,
                     }
                 },
+                {"$skip": toSkip},
+                {"$limit": num},
                 {  # lookup for reviews
                     "$lookup": {
                         "from": "review",
@@ -103,8 +105,6 @@ async def search_wines(
                         "_id": 0,
                     }
                 },
-                {"$skip": toSkip},
-                {"$limit": num},
             ]
         )
     else:
@@ -121,6 +121,8 @@ async def search_wines(
                         "tags": {"$in": tags},
                     }
                 },
+                {"$skip": toSkip},
+                {"$limit": num},
                 {  # lookup for reviews
                     "$lookup": {
                         "from": "review",
@@ -147,8 +149,6 @@ async def search_wines(
                         "_id": 0,
                     }
                 },
-                {"$skip": toSkip},
-                {"$limit": num},
             ]
         )
     docs = await wines.to_list(None)

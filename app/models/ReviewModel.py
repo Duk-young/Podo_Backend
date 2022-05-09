@@ -16,6 +16,7 @@ class CommentModel(BaseModel):
 
 
 class ReviewModel(BaseModel):
+    # TODO Docs Update
     # wineID: int = Field(...)
     userID: int = Field(...)
     content: str = Field("")
@@ -29,6 +30,7 @@ class ReviewModel(BaseModel):
     )
     tags: list[str] = Field([])
     comments: list[CommentModel] = Field([])
+    likedBy: list[int] = Field([])
 
     class Config:
         allow_population_by_field_name = True

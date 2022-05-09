@@ -318,6 +318,59 @@ async def get_listof_user_liked_winelist(
     return docs
 
 
+@router.post("/{userID}/like-review")
+async def like_review(request: Request, userID: int = -1, reviewID: int = -1):
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    review = await request.app.mongodb["review"].find_one(
+        {"reviewID": reviewID}, {"_id": 0}
+    )
+    if review == None:
+        response = JSONResponse(content="No such review exists")
+        response.status_code = 404
+        return response
+    if reviewID not in review["likedBy"]:
+        review = await request.app.mongodb["review"].find_one_and_update(
+            {"reviewID": reviewID},
+            {
+                "$push": {"likedBy": userID},
+                "$set": {
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
+            {"_id": 0},
+            return_document=ReturnDocument.AFTER,
+        )
+    else:
+        review = await request.app.mongodb["review"].find_one_and_update(
+            {"reviewID": reviewID},
+            {
+                "$pull": {"likedBy": userID},
+                "$set": {
+                    "lastUpdatedAt": datetime.now()
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M:%S"),
+                },
+            },
+            {"_id": 0},
+            return_document=ReturnDocument.AFTER,
+        )
+    if review == None:
+        response = JSONResponse(content="An error occurred while updating review")
+        response.status_code = 404
+        return response
+    return {
+        "reviewID": review["reviewID"],
+        "likedUser": userID,
+        "lastUpdatedAt": review["lastUpdatedAt"],
+    }
+
+
 @router.post("/{userID}/like-wine")
 async def like_wine(request: Request, userID: int = -1, wineID: int = -1):
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})

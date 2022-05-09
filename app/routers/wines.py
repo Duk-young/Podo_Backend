@@ -26,7 +26,6 @@ router = APIRouter(
     responses={
         404: {"description": "Not found"},
         403: {"description": "Operation forbidden"},
-        204: {"description": "No content found"},
     },
 )
 
@@ -253,7 +252,8 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
 
 
 @router.get("/{wineID}")
-async def get_wine(request: Request, wineID: int):
+async def get_wine(request: Request, wineID: int, userID: int = -1):
+    # DOCS UPDATE 필요
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {"$inc": {"views": 1}},
@@ -296,6 +296,12 @@ async def get_wine(request: Request, wineID: int):
     )
     wine = await wine.to_list(None)
     wine = wine[0]
+    for review in wine["reviews"]:
+        if userID in review["likedBy"]:
+            review["userLiked"] = True
+        else:
+            review["userLiked"] = False
+        review.pop("likedBy")
     return wine
 
 

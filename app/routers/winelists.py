@@ -48,7 +48,7 @@ async def search_winelists(
     tags: list[str] = Query([]),
     sort: int = 1,
 ):
-    # TODO 정렬, 와인이미지
+    # TODO 정렬, DOC UPDATE
     toSkip = num * (page - 1)
     winelists = None
     if len(tags) == 0:
@@ -77,6 +77,23 @@ async def search_winelists(
                                 }
                             ],
                             "as": "wines",
+                        }
+                    },
+                    {  # lookup for user
+                        "$lookup": {
+                            "from": "user",
+                            "localField": "userID",
+                            "foreignField": "userID",
+                            "pipeline": [
+                                {
+                                    "$project": {
+                                        "_id": 0,
+                                        "username": 1,
+                                        "profileImage": 1,
+                                    }
+                                }
+                            ],
+                            "as": "author",
                         }
                     },
                     {
@@ -121,6 +138,23 @@ async def search_winelists(
                         "as": "wines",
                     }
                 },
+                {  # lookup for user
+                    "$lookup": {
+                        "from": "user",
+                        "localField": "userID",
+                        "foreignField": "userID",
+                        "pipeline": [
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                    "username": 1,
+                                    "profileImage": 1,
+                                }
+                            }
+                        ],
+                        "as": "author",
+                    }
+                },
                 {
                     "$project": {
                         "_id": 0,
@@ -132,6 +166,10 @@ async def search_winelists(
             ]
         )
     docs = await winelists.to_list(None)
+    for doc in docs:
+        doc["username"] = doc["author"][0]["username"]
+        doc["profileImage"] = doc["author"][0]["profileImage"]
+        doc.pop("author")
     return docs
 
 
@@ -215,7 +253,7 @@ async def restore_winelist(request: Request, winelistID: int = -1, userID: int =
 
 @router.get("/{winelistID}")
 async def get_winelist(request: Request, winelistID: int = -1):
-    # TODO 와인이미지 서칭
+    # TODO DOC UPDATE
     winelist = request.app.mongodb["winelist"].aggregate(
         [
             {
@@ -224,7 +262,7 @@ async def get_winelist(request: Request, winelistID: int = -1):
                     "winelistID": winelistID,
                 },
             },
-            {  # lookup for reviews
+            {  # lookup for wine
                 "$lookup": {
                     "from": "wine",
                     "localField": "wines.wineID",
@@ -242,6 +280,23 @@ async def get_winelist(request: Request, winelistID: int = -1):
                     "as": "wines",
                 }
             },
+            {  # lookup for user
+                "$lookup": {
+                    "from": "user",
+                    "localField": "userID",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "username": 1,
+                                "profileImage": 1,
+                            }
+                        }
+                    ],
+                    "as": "author",
+                }
+            },
             {
                 "$project": {
                     "_id": 0,
@@ -255,6 +310,9 @@ async def get_winelist(request: Request, winelistID: int = -1):
         return response
     doc = await winelist.to_list(None)
     doc = doc[0]
+    doc["username"] = doc["author"][0]["username"]
+    doc["profileImage"] = doc["author"][0]["profileImage"]
+    doc.pop("author")
     return doc
 
 

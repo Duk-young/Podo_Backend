@@ -11,6 +11,7 @@ from .routers import (
     users,
     supportTickets,
     s3upload,
+    tag,
 )
 
 # from .consts import origins
@@ -60,6 +61,7 @@ app.include_router(users.router)
 app.include_router(supportTickets.router)
 app.include_router(verificationTickets.router)
 app.include_router(s3upload.router)
+app.include_router(tag.router)
 
 
 @app.get("/")

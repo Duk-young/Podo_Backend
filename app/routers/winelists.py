@@ -48,13 +48,15 @@ async def search_winelists(
     tags: list[str] = Query([]),
     sort: int = 1,
 ):
-    # TODO 정렬, DOC UPDATE
+    # TODO 정렬
     toSkip = num * (page - 1)
     winelists = None
     if len(tags) == 0:
         winelists = (
             request.app.mongodb["winelist"].aggregate(
-                [
+                [  # {"$sort": {sortingOption: -1}},
+                    {"$skip": toSkip},
+                    {"$limit": num},
                     {
                         "$match": {
                             "isDeleted": False,
@@ -101,9 +103,6 @@ async def search_winelists(
                             "_id": 0,
                         }
                     },
-                    # {"$sort": {sortingOption: -1}},
-                    {"$skip": toSkip},
-                    {"$limit": num},
                 ]
             )
             # .sort("_id", -1)
@@ -112,7 +111,9 @@ async def search_winelists(
         )
     else:
         winelists = request.app.mongodb["winelist"].aggregate(
-            [
+            [  # {"$sort": {sortingOption: -1}},
+                {"$skip": toSkip},
+                {"$limit": num},
                 {
                     "$match": {
                         "isDeleted": False,
@@ -160,9 +161,6 @@ async def search_winelists(
                         "_id": 0,
                     }
                 },
-                # {"$sort": {sortingOption: -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
             ]
         )
     docs = await winelists.to_list(None)
@@ -253,7 +251,6 @@ async def restore_winelist(request: Request, winelistID: int = -1, userID: int =
 
 @router.get("/{winelistID}")
 async def get_winelist(request: Request, winelistID: int = -1):
-    # TODO DOC UPDATE
     winelist = request.app.mongodb["winelist"].aggregate(
         [
             {

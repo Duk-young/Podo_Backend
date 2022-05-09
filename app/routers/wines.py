@@ -47,45 +47,115 @@ async def search_wines(
     wines = None
     print(tags)
     if len(tags) == 0:
-        wines = (
-            request.app.mongodb["wine"]
-            .find(
+        # wines = (
+        #     request.app.mongodb["wine"]
+        #     .find(
+        #         {
+        #             "$and": [
+        #                 {"price": {"$gte": minPrice}},
+        #                 {"price": {"$lte": maxPrice}},
+        #                 {"rating": {"$gte": minRating}},
+        #                 {"isDeleted": False},
+        #             ],
+        #             "name": {"$regex": keyword, "$options": "i"},
+        #         },
+        #         {"_id": 0},
+        #     )
+        #     .sort("_id", -1)
+        #     .skip(toSkip)
+        #     .limit(num)
+        # )
+        wines = request.app.mongodb["wine"].aggregate(
+            [
+                {"$sort": {"_id": -1}},
+                {"$skip": toSkip},
+                {"$limit": num},
                 {
-                    "$and": [
-                        {"price": {"$gte": minPrice}},
-                        {"price": {"$lte": maxPrice}},
-                        {"rating": {"$gte": minRating}},
-                        {"isDeleted": False},
-                    ],
-                    "name": {"$regex": keyword, "$options": "i"},
+                    "$match": {
+                        "price": {"$gte": minPrice},
+                        "price": {"$lte": maxPrice},
+                        "rating": {"$gte": minRating},
+                        "isDeleted": False,
+                    }
                 },
-                {"_id": 0},
-            )
-            .sort("_id", -1)
-            .skip(toSkip)
-            .limit(num)
+                {  # lookup for reviews
+                    "$lookup": {
+                        "from": "review",
+                        "localField": "wineID",
+                        "foreignField": "wineID",
+                        "pipeline": [
+                            {
+                                "$group": {
+                                    "_id": None,
+                                    "totalReviews": {"$sum": 1},
+                                },
+                            },
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                },
+                            },
+                        ],
+                        "as": "reviews",
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                    }
+                },
+            ]
         )
     else:
-        wines = (
-            request.app.mongodb["wine"]
-            .find(
+        wines = request.app.mongodb["wine"].aggregate(
+            [
+                {"$sort": {"_id": -1}},
+                {"$skip": toSkip},
+                {"$limit": num},
                 {
-                    "$and": [
-                        {"price": {"$gte": minPrice}},
-                        {"price": {"$lte": maxPrice}},
-                        {"rating": {"$gte": minRating}},
-                        {"isDeleted": False},
-                        {"tags": {"$in": tags}},
-                    ],
-                    "name": {"$regex": keyword, "$options": "i"},
+                    "$match": {
+                        "price": {"$gte": minPrice},
+                        "price": {"$lte": maxPrice},
+                        "rating": {"$gte": minRating},
+                        "isDeleted": False,
+                        "tags": {"$in": tags},
+                    }
                 },
-                {"_id": 0},
-            )
-            .sort("_id", -1)
-            .skip(toSkip)
-            .limit(num)
+                {  # lookup for reviews
+                    "$lookup": {
+                        "from": "review",
+                        "localField": "wineID",
+                        "foreignField": "wineID",
+                        "pipeline": [
+                            {
+                                "$group": {
+                                    "_id": None,
+                                    "totalReviews": {"$sum": 1},
+                                },
+                            },
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                },
+                            },
+                        ],
+                        "as": "reviews",
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                    }
+                },
+            ]
         )
     docs = await wines.to_list(None)
+    for doc in docs:
+        if len(doc["reviews"]) > 0:
+            doc["totalReviews"] = doc["reviews"][0]["totalReviews"]
+        else:
+            doc["totalReviews"] = 0
+        doc.pop("reviews")
     if len(docs) == 0:
         response = JSONResponse(content="No wines exists")
         response.status_code = 204

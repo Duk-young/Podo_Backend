@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
 import boto3
+from .consts import origins
 from .routers import (
     verificationTickets,
     winelists,
@@ -14,7 +15,7 @@ from .routers import (
     tag,
 )
 
-# from .consts import origins
+
 import requests
 import json
 
@@ -32,6 +33,14 @@ DB_ADDRESS = os.getenv("DB_ADDRESS")
 RUNTIME_ENV = os.getenv("RUNTIME_ENV")
 # initialize the app
 app = FastAPI()
+
+# from .consts import origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins.urls,
+    allow_credentials=True,
+    allow_methods=["*"],
+)
 
 
 @app.on_event("startup")

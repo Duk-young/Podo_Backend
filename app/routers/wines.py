@@ -307,6 +307,13 @@ async def get_wine(request: Request, wineID: int, userID: int = -1):
         else:
             review["userLiked"] = False
         review.pop("likedBy")
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    if user == None:
+        wine["userLiked"] = False
+    elif wineID in user["likedWines"]:
+        wine["userLiked"] = True
+    else:
+        wine["userLiked"] = False
     return wine
 
 

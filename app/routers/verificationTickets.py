@@ -50,7 +50,7 @@ async def get_total_verification_tickets(request: Request, userID: int = -1):
 @router.get("")
 async def get_verification_tickets(
     request: Request, userID: int = -1, status: int = 1, num: int = 10, page: int = 1
-):
+):  # TODO DOC 수정 필요
     toSkip = num * (page - 1)
     requester = await request.app.mongodb["user"].find_one(
         {"userID": userID}, {"_id": 0}
@@ -59,17 +59,27 @@ async def get_verification_tickets(
         response = JSONResponse(content="No such user exists")
         response.status_code = 404
         return response
-    if requester["status"] != 2:
-        response = JSONResponse(content="User is not authorized for this action")
-        response.status_code = 401
-        return response
-    verificationTickets = (
-        request.app.mongodb["verificationTicket"]
-        .find({}, {"_id": 0})
-        .sort("_id", -1)
-        .skip(toSkip)
-        .limit(num)
-    )
+    # if requester["status"] != 2:
+    #     response = JSONResponse(content="User is not authorized for this action")
+    #     response.status_code = 401
+    #     return response
+    verificationTickets = None
+    if requester["status"] == 2:
+        verificationTickets = (
+            request.app.mongodb["verificationTicket"]
+            .find({}, {"_id": 0})
+            .sort("_id", -1)
+            .skip(toSkip)
+            .limit(num)
+        )
+    else:
+        verificationTickets = (
+            request.app.mongodb["verificationTicket"]
+            .find({"userID": userID}, {"_id": 0})
+            .sort("_id", -1)
+            .skip(toSkip)
+            .limit(num)
+        )
     docs = await verificationTickets.to_list(None)
     if len(docs) == 0:
         response = JSONResponse(content="No verification tickets exists in DB")

@@ -257,8 +257,8 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
 
 
 @router.get("/{wineID}")
-async def get_wine(request: Request, wineID: int, userID: int = -1):
-    # DOCS UPDATE 필요
+async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3):
+    # DOCS UPDATE 필요, 유저네임도 lookup으로 가져와야할듯
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {"$inc": {"views": 1}},
@@ -284,10 +284,32 @@ async def get_wine(request: Request, wineID: int, userID: int = -1):
                     "foreignField": "wineID",
                     "pipeline": [
                         {
+                            "$lookup": {
+                                "from": "user",
+                                "localField": "userID",
+                                "foreignField": "userID",
+                                "pipeline": [
+                                    {
+                                        "$project": {
+                                            "_id": 0,
+                                            "username": 1,
+                                            "profileImage": 1,
+                                            "status": 1,
+                                        }
+                                    }
+                                ],
+                                "as": "userInfo",
+                            },
+                        },
+                        {"$unwind": "$userInfo"},
+                        {
                             "$project": {
                                 "_id": 0,
-                            }
-                        }
+                                "username": 0,
+                                "userStatus": 0,
+                            },
+                        },
+                        {"$limit": num},
                     ],
                     "as": "reviews",
                 }
@@ -297,7 +319,8 @@ async def get_wine(request: Request, wineID: int, userID: int = -1):
                     "_id": 0,
                 }
             },
-        ]
+        ],
+        # return_document=ReturnDocument.AFTER,
     )
     wine = await wine.to_list(None)
     wine = wine[0]
@@ -307,6 +330,10 @@ async def get_wine(request: Request, wineID: int, userID: int = -1):
         else:
             review["userLiked"] = False
         review.pop("likedBy")
+        review["username"] = review["userInfo"]["username"]
+        review["profileImage"] = review["userInfo"]["profileImage"]
+        review["status"] = review["userInfo"]["status"]
+        review.pop("userInfo")
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
         wine["userLiked"] = False

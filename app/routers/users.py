@@ -71,7 +71,39 @@ async def get_total_users(request: Request):
 
 
 @router.get("")
-async def get_users(request: Request, userID: int = -1, num: int = 100, page: int = 1):
+async def get_users_insensitive(request: Request, num: int = 100, page: int = 1):
+    toSkip = num * (page - 1)
+    users = (
+        request.app.mongodb["user"]
+        .find(
+            {},
+            {
+                "_id": 0,
+                "userID": 1,
+                "username": 1,
+                "profileImage": 1,
+                "status": 1,
+                "tags": 1,
+                "followings": 1,
+                "followers": 1,
+            },
+        )
+        .sort("_id", -1)
+        .skip(toSkip)
+        .limit(num)
+    )
+    docs = await users.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content="No user exists in DB")
+        response.status_code = 204
+        return response
+    return docs
+
+
+@router.get("/all-fields")
+async def get_users_sensitive(
+    request: Request, userID: int = -1, num: int = 100, page: int = 1
+):
     toSkip = num * (page - 1)
     requester = await request.app.mongodb["user"].find_one(
         {"userID": userID}, {"_id": 0}
@@ -165,7 +197,7 @@ async def post_user(request: Request, userInfo: UserModel = Body(...)):
     return response
 
 
-@router.get("/all-fields/{userID}")
+@router.get("{userID}/all-fields")
 async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
     requester = await request.app.mongodb["user"].find_one(
         {"userID": requesterID}, {"_id": 0}
@@ -210,10 +242,98 @@ async def get_user(request: Request, userID: int = -1):
     return user
 
 
+@router.get("/{userID}/followings")
+async def get_user_followings(request: Request, userID: int = -1):
+    user = request.app.mongodb["user"].aggregate(
+        [
+            {"$match": {"userID": userID}},
+            {
+                "$lookup": {
+                    "from": "user",
+                    "localField": "followings",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "userID": 1,
+                                "username": 1,
+                                "profileImage": 1,
+                                "status": 1,
+                            }
+                        }
+                    ],
+                    "as": "followings",
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "userID": 1,
+                    "username": 1,
+                    "profileImage": 1,
+                    "status": 1,
+                    "followings": 1,
+                }
+            },
+        ]
+    )
+    user = await user.to_list(None)
+    if len(user) == 0:
+        response = JSONResponse(content="userID : No such user exists")
+        response.status_code = 404
+        return response
+    return user[0]
+
+
+@router.get("/{userID}/followers")
+async def get_user_followers(request: Request, userID: int = -1):
+    user = request.app.mongodb["user"].aggregate(
+        [
+            {"$match": {"userID": userID}},
+            {
+                "$lookup": {
+                    "from": "user",
+                    "localField": "followers",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "userID": 1,
+                                "username": 1,
+                                "profileImage": 1,
+                                "status": 1,
+                            }
+                        }
+                    ],
+                    "as": "followers",
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                    "userID": 1,
+                    "username": 1,
+                    "profileImage": 1,
+                    "status": 1,
+                    "followers": 1,
+                }
+            },
+        ]
+    )
+    user = await user.to_list(None)
+    if len(user) == 0:
+        response = JSONResponse(content="userID : No such user exists")
+        response.status_code = 404
+        return response
+    return user[0]
+
+
 @router.get("/{userID}/reviews")
 async def get_user_wine_review(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
-):
+):  # likedBy -> likes 개수로 바꿔줘야함
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -320,6 +440,7 @@ async def get_listof_user_liked_winelist(
 
 @router.post("/{userID}/like-review")
 async def like_review(request: Request, userID: int = -1, reviewID: int = -1):
+    # DOC UPDATE
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
         response = JSONResponse(content="No such user exists")
@@ -766,8 +887,8 @@ async def user_population(request: Request, num: int = 50):
         )
         userJson = {
             "userID": newUserID["index"],
-            "username": "testUser" + str(i),
-            "email": "testEmail" + str(i) + "@test.com",
+            "username": "testUser" + str(newUserID["index"]),
+            "email": "testEmail" + str(newUserID["index"]) + "@test.com",
             "profileImage": "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/Archive/duck/duck_1.jpg",
             "phone": "",
             "gender": "M",
@@ -800,22 +921,30 @@ async def review_population(request: Request, userID: int = -1, num: int = 20):
             "wineID": random.randint(0, 3000),
             "reviewID": newReviewID["index"],
             "userID": userID,
-            "username": "testUser" + str(i),
-            "rating": random.randint(0, 5),
+            "username": "testUser" + str(userID),
+            "rating": random.randint(1, 5),
             "content": "This is good wine by user" + str(userID),
             "isDeleted": False,
             "createdAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
             "lastUpdatedAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
             "tags": [],
             "comments": [],
+            "likedBy": [],
+            "userStatus": 0,
         }
+        while True:
+            checkReview = await request.app.mongodb["review"].find_one(
+                {"wineID": reviewJson["wineID"], "userID": userID}, {"_id": 0}
+            )
+            if checkReview:
+                reviewJson["wineID"] = random.randin(0, 3000)
+                break
         newReview = await request.app.mongodb["review"].insert_one(reviewJson)
         if newReview == None:
             raise HTTPException(400)
-        time.sleep(1)
-        await comment_population(
-            request=request, userID=userID, reviewID=newReviewID["index"]
-        )
+        # await comment_population(
+        #     request=request, userID=userID, reviewID=newReviewID["index"]
+        # )
         print("reviewID", newReviewID["index"], "has been added to database.")
 
 

@@ -258,7 +258,7 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
 
 @router.get("/{wineID}")
 async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3):
-    # DOCS UPDATE 필요, 유저네임도 lookup으로 가져와야할듯
+    # TODO TMR
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {"$inc": {"views": 1}},
@@ -269,75 +269,12 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
         response = JSONResponse(content="No such wine exists")
         response.status_code = 404
         return response
-    wine = request.app.mongodb["wine"].aggregate(
-        [
-            {
-                "$match": {
-                    "isDeleted": False,
-                    "wineID": wineID,
-                },
-            },
-            {  # lookup for reviews
-                "$lookup": {
-                    "from": "review",
-                    "localField": "wineID",
-                    "foreignField": "wineID",
-                    "pipeline": [
-                        {
-                            "$lookup": {
-                                "from": "user",
-                                "localField": "userID",
-                                "foreignField": "userID",
-                                "pipeline": [
-                                    {
-                                        "$project": {
-                                            "_id": 0,
-                                            "username": 1,
-                                            "profileImage": 1,
-                                            "status": 1,
-                                        }
-                                    }
-                                ],
-                                "as": "userInfo",
-                            },
-                        },
-                        {"$unwind": "$userInfo"},
-                        {
-                            "$project": {
-                                "_id": 0,
-                                "username": 0,
-                                "userStatus": 0,
-                            },
-                        },
-                        {"$limit": num},
-                    ],
-                    "as": "reviews",
-                }
-            },
-            {
-                "$project": {
-                    "_id": 0,
-                }
-            },
-        ],
-        # return_document=ReturnDocument.AFTER,
+    reviews = await get_wine_reviews(
+        request=request, wineID=wineID, num=num, userID=userID
     )
-    wine = await wine.to_list(None)
-    wine = wine[0]
-    for review in wine["reviews"]:
-        if userID in review["likedBy"]:
-            review["userLiked"] = True
-        else:
-            review["userLiked"] = False
-        review.pop("likedBy")
-        review["username"] = review["userInfo"]["username"]
-        review["profileImage"] = review["userInfo"]["profileImage"]
-        review["status"] = review["userInfo"]["status"]
-        review.pop("userInfo")
+    wine["reviews"] = reviews
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
-    if user == None:
-        wine["userLiked"] = False
-    elif wineID in user["likedWines"]:
+    if user != None and wineID in user["likedWines"]:
         wine["userLiked"] = True
     else:
         wine["userLiked"] = False
@@ -481,7 +418,12 @@ async def get_total_wine_review_comments(
 
 @router.get("/{wineID}/reviews")
 async def get_wine_reviews(
-    request: Request, wineID: int = -1, num: int = 20, sort: int = 1, page: int = 1
+    request: Request,
+    wineID: int = -1,
+    num: int = 20,
+    sort: int = 1,
+    page: int = 1,
+    userID: int = -1,
 ):
     toSkip = num * (page - 1)
     wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
@@ -489,19 +431,117 @@ async def get_wine_reviews(
         response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
         response.status_code = 404
         return response
-    reviews = (
-        request.app.mongodb["review"]
-        .find({"wineID": wineID}, {"_id": 0})
-        .sort("_id", -1)
-        .skip(toSkip)
-        .limit(num)
+    # reviews = (
+    #     request.app.mongodb["review"]
+    #     .find({"wineID": wineID}, {"_id": 0})
+    #     .sort("_id", -1)
+    #     .skip(toSkip)
+    #     .limit(num)
+    # )
+    reviews = request.app.mongodb["review"].aggregate(
+        [
+            {
+                "$match": {
+                    "wineID": wineID,
+                    "isDeleted": False,
+                }
+            },
+            {"$skip": toSkip},
+            {"$limit": num},
+            {
+                "$lookup": {
+                    "from": "user",
+                    "localField": "userID",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "username": 1,
+                                "profileImage": 1,
+                                "status": 1,
+                            }
+                        }
+                    ],
+                    "as": "userInfo",
+                }
+            },
+            {"$unwind": {"path": "$comments", "preserveNullAndEmptyArrays": True}},
+            {
+                "$lookup": {
+                    "from": "user",
+                    "localField": "comments.userID",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "username": 1,
+                                "profileImage": 1,
+                                "status": 1,
+                            }
+                        }
+                    ],
+                    "as": "comments.userInfo",
+                }
+            },
+            {
+                "$group": {
+                    "_id": {"reviewID": "$reviewID"},
+                    "wineID": {"$first": "$wineID"},
+                    "reviewID": {"$first": "$reviewID"},
+                    "userID": {"$first": "$userID"},
+                    "username": {"$first": "$userInfo.username"},
+                    "profileImage": {"$first": "$userInfo.profileImage"},
+                    "status": {"$first": "$userInfo.status"},
+                    "rating": {"$first": "$rating"},
+                    "content": {"$first": "$content"},
+                    "isDeleted": {"$first": "$isDeleted"},
+                    "createdAt": {"$first": "$createdAt"},
+                    "lastUpdatedAt": {"$first": "$lastUpdatedAt"},
+                    "tags": {"$first": "$tags"},
+                    "likedBy": {"$first": "$likedBy"},
+                    "comments": {
+                        "$push": {
+                            "commentID": "$comments.commentID",
+                            "userID": "$comments.userID",
+                            "content": "$comments.content",
+                            "createdAt": "$comments.createdAt",
+                            "lastUpdatedAt": "$comments.lastUpdatedAt",
+                            "isDeleted": "$comments.isDeleted",
+                            "username": {"$first": "$comments.userInfo.username"},
+                            "profileImage": {
+                                "$first": "$comments.userInfo.profileImage"
+                            },
+                            "status": {"$first": "$comments.userInfo.status"},
+                        }
+                    },
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                }
+            },
+        ]
     )
     docs = await reviews.to_list(None)
-
     if len(docs) == 0:
         response = JSONResponse(content="No reviews exists")
         response.status_code = 204
         return response
+    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    for review in docs:
+        if user != None and userID in review["likedBy"]:
+            review["userLiked"] = True
+        else:
+            review["userLiked"] = False
+        review.pop("likedBy")
+        review["username"] = review["username"][0]
+        review["profileImage"] = review["profileImage"][0]
+        review["status"] = review["status"][0]
+        if len(review["comments"][0]) == 0:
+            review["comments"] = []
     return docs
 
 

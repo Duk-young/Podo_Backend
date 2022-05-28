@@ -64,7 +64,7 @@ async def get_total_users(request: Request):
     users = request.app.mongodb["user"].find({}, {"_id": 0})
     if users == None:
         response = JSONResponse(content="No user found")
-        response.status_code = 204
+        response.status_code = 200
         return response
     docs = await users.to_list(None)
     return {"totalUsers": len(docs)}
@@ -95,7 +95,7 @@ async def get_users_insensitive(request: Request, num: int = 100, page: int = 1)
     docs = await users.to_list(None)
     if len(docs) == 0:
         response = JSONResponse(content="No user exists in DB")
-        response.status_code = 204
+        response.status_code = 200
         return response
     return docs
 
@@ -126,7 +126,7 @@ async def get_users_sensitive(
     docs = await users.to_list(None)
     if len(docs) == 0:
         response = JSONResponse(content="No user exists in DB")
-        response.status_code = 204
+        response.status_code = 200
         return response
     return docs
 
@@ -169,8 +169,8 @@ async def get_user_winelist_review(
     )
     docs = await reviews.to_list(None)
     if len(docs) == 0:
-        response = JSONResponse(content="No more reviews to fetch")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     return docs
 
@@ -333,7 +333,7 @@ async def get_user_followers(request: Request, userID: int = -1):
 @router.get("/{userID}/reviews")
 async def get_user_wine_review(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
-):  # likedBy -> likes 개수로 바꿔줘야함
+):  # TODO likedBy -> likes 개수로 바꿔줘야함
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -348,8 +348,8 @@ async def get_user_wine_review(
     )
     docs = await reviews.to_list(None)
     if len(docs) == 0:
-        response = JSONResponse(content="No more reviews to fetch")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     return docs
 
@@ -358,6 +358,7 @@ async def get_user_wine_review(
 async def get_listof_user_reviewed_wine(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
 ):
+    # TODO 204 -> 200 [] DOCS UPDATE
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -372,8 +373,8 @@ async def get_listof_user_reviewed_wine(
     )
     docs = await reviews.to_list(None)
     if len(docs) == 0:
-        response = JSONResponse(content="No more wines to fetch")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     wineIDs = []
     for doc in docs:
@@ -392,6 +393,7 @@ async def get_listof_user_reviewed_wine(
 async def get_listof_user_liked_wine(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
 ):
+    # TODO 204 -> 200 []
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -400,8 +402,8 @@ async def get_listof_user_liked_wine(
         return response
     likedWines = user["likedWines"]
     if len(docs) == 0:
-        response = JSONResponse(content="No more wines to fetch")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     wines = (
         request.app.mongodb["wine"]
@@ -417,6 +419,7 @@ async def get_listof_user_liked_wine(
 async def get_listof_user_liked_winelist(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
 ):
+    # TODO 204 -> 200 []
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -425,8 +428,8 @@ async def get_listof_user_liked_winelist(
         return response
     likedWinelists = user["likedWinelists"]
     if len(docs) == 0:
-        response = JSONResponse(content="No more wines to fetch")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     winelists = (
         request.app.mongodb["wine"]
@@ -440,7 +443,7 @@ async def get_listof_user_liked_winelist(
 
 @router.post("/{userID}/like-review")
 async def like_review(request: Request, userID: int = -1, reviewID: int = -1):
-    # DOC UPDATE
+    # TODO DOC UPDATE
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
         response = JSONResponse(content="No such user exists")

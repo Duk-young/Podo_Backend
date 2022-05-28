@@ -71,12 +71,14 @@ async def get_total_users(request: Request):
 
 
 @router.get("")
-async def get_users_insensitive(request: Request, num: int = 100, page: int = 1):
+async def get_users_insensitive(
+    request: Request, num: int = 50, page: int = 1, username: str = ""
+):
     toSkip = num * (page - 1)
     users = (
         request.app.mongodb["user"]
         .find(
-            {},
+            {"username": {"$regex": username, "$options": "i"}},
             {
                 "_id": 0,
                 "userID": 1,

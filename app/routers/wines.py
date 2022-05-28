@@ -537,11 +537,27 @@ async def get_wine_reviews(
         else:
             review["userLiked"] = False
         review.pop("likedBy")
-        review["username"] = review["username"][0]
-        review["profileImage"] = review["profileImage"][0]
-        review["status"] = review["status"][0]
+        if len(review["username"]) == 0:
+            review["username"] = "Deleted User"
+        else:
+            review["username"] = review["username"][0]
+        if len(review["profileImage"]) == 0:
+            # TODO 디폴트 이미지로 대체
+            review["profileImage"] = ""
+        else:
+            review["profileImage"] = review["profileImage"][0]
+        if len(review["status"]) == 0:
+            review["status"] = 0
+        else:
+            review["status"] = review["status"][0]
         if len(review["comments"][0]) == 0:
             review["comments"] = []
+        for comment in review["comments"]:
+            if "username" not in comment.keys():
+                comment["username"] = "Deleted User"
+                # TODO 디폴트
+                comment["profileImage"] = ""
+                comment["status"] = 0
     return docs
 
 

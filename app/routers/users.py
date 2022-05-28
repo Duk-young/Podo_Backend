@@ -442,7 +442,7 @@ async def get_listof_user_liked_winelist(
         return response
     likedWinelists = user["likedWinelists"]
     winelists = (
-        request.app.mongodb["wine"]
+        request.app.mongodb["winelist"]
         .find(
             {"winelistID": {"$in": likedWinelists}, "isDeleted": False},
             {

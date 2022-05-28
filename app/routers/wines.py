@@ -527,8 +527,8 @@ async def get_wine_reviews(
     )
     docs = await reviews.to_list(None)
     if len(docs) == 0:
-        response = JSONResponse(content="No reviews exists")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     for review in docs:

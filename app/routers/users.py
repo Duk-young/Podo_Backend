@@ -96,7 +96,7 @@ async def get_users_insensitive(
     )
     docs = await users.to_list(None)
     if len(docs) == 0:
-        response = JSONResponse(content="No user exists in DB")
+        response = JSONResponse(content=[])
         response.status_code = 200
         return response
     return docs
@@ -127,7 +127,7 @@ async def get_users_sensitive(
     )
     docs = await users.to_list(None)
     if len(docs) == 0:
-        response = JSONResponse(content="No user exists in DB")
+        response = JSONResponse(content=[])
         response.status_code = 200
         return response
     return docs

@@ -359,6 +359,8 @@ async def get_listof_user_reviewed_wine(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
 ):
     # TODO 204 -> 200 [] DOCS UPDATE
+    # TODO 와인 이미지들을 반환해야하는지?
+    # TODO URL 추가해야 할 듯
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -401,17 +403,29 @@ async def get_listof_user_liked_wine(
         response.status_code = 404
         return response
     likedWines = user["likedWines"]
-    if len(docs) == 0:
-        response = JSONResponse(content=[])
-        response.status_code = 200
-        return response
     wines = (
         request.app.mongodb["wine"]
-        .find({"wineID": {"$in": likedWines}}, {"_id": 0})
+        .find(
+            {"wineID": {"$in": likedWines}, "isDeleted": False},
+            {
+                "_id": 0,
+                "wineID": 1,
+                "name": 1,
+                "images": 1,
+                "createdAt": 1,
+                "lastUpdatedAt": 1,
+            },
+        )
         .skip(toSkip)
         .limit(num)
     )
     docs = await wines.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content=[])
+        response.status_code = 200
+        return response
+    for doc in docs:
+        doc["url"] = "/wines/" + str(doc["wineID"])
     return docs
 
 
@@ -427,17 +441,29 @@ async def get_listof_user_liked_winelist(
         response.status_code = 404
         return response
     likedWinelists = user["likedWinelists"]
-    if len(docs) == 0:
-        response = JSONResponse(content=[])
-        response.status_code = 200
-        return response
     winelists = (
         request.app.mongodb["wine"]
-        .find({"wineID": {"$in": likedWinelists}}, {"_id": 0})
+        .find(
+            {"winelistID": {"$in": likedWinelists}, "isDeleted": False},
+            {
+                "_id": 0,
+                "winelistID": 1,
+                "name": 1,
+                "thumbnailImage": 1,
+                "createdAt": 1,
+                "lastUpdatedAt": 1,
+            },
+        )
         .skip(toSkip)
         .limit(num)
     )
     docs = await winelists.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content=[])
+        response.status_code = 200
+        return response
+    for doc in docs:
+        doc["url"] = "/winelists/" + str(doc["winelistID"])
     return docs
 
 

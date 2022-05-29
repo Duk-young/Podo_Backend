@@ -191,7 +191,7 @@ async def post_winelist(request: Request, winelistInfo: WinelistModel = Body(...
         response = JSONResponse(content="No such user exists")
         response.status_code = 404
         return response
-    if requester["status"] != 2:
+    if requester["status"] < 1:
         response = JSONResponse(content="User is not authorized for this action")
         response.status_code = 401
         return response

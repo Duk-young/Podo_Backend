@@ -63,10 +63,16 @@ async def get_support_tickets(
         response = JSONResponse(content="User is not authorized for this action")
         response.status_code = 401
         return response
+    ticketStatus = []
+    if status == 0:
+        ticketStatus.append(1)
+        ticketStatus.append(2)
+    else:
+        ticketStatus.append(status)
     if requester["status"] == 2:
         supportTickets = request.app.mongodb["supportTicket"].aggregate(
             [
-                {"$match": {"status": status}},
+                {"$match": {"status": {"$in": ticketStatus}}},
                 {
                     "$lookup": {
                         "from": "user",
@@ -96,7 +102,7 @@ async def get_support_tickets(
     else:
         supportTickets = request.app.mongodb["supportTicket"].aggregate(
             [
-                {"$match": {"userID": userID, "status": status}},
+                {"$match": {"userID": userID, "status": {"$in": ticketStatus}}},
                 {
                     "$lookup": {
                         "from": "user",

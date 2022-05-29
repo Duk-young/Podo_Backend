@@ -60,10 +60,16 @@ async def get_verification_tickets(
         response.status_code = 404
         return response
     verificationTickets = None
+    ticketStatus = []
+    if status == 0:
+        ticketStatus.append(1)
+        ticketStatus.append(2)
+    else:
+        ticketStatus.append(status)
     if requester["status"] == 2:
         verificationTickets = request.app.mongodb["verificationTicket"].aggregate(
             [
-                {"$match": {"status": status}},
+                {"$match": {"status": {"$in": ticketStatus}}},
                 {
                     "$lookup": {
                         "from": "user",
@@ -93,7 +99,7 @@ async def get_verification_tickets(
     else:
         verificationTickets = request.app.mongodb["verificationTicket"].aggregate(
             [
-                {"$match": {"userID": userID, "status": status}},
+                {"$match": {"userID": userID, "status": {"$in": ticketStatus}}},
                 {
                     "$lookup": {
                         "from": "user",

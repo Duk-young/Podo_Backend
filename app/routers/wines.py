@@ -272,7 +272,10 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
     reviews = await get_wine_reviews(
         request=request, wineID=wineID, num=num, userID=userID
     )
-    wine["reviews"] = reviews
+    if len(reviews) == 0:
+        wine["reviews"] = []
+    else:
+        wine["reviews"] = reviews
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user != None and wineID in user["likedWines"]:
         wine["userLiked"] = True
@@ -527,9 +530,7 @@ async def get_wine_reviews(
     )
     docs = await reviews.to_list(None)
     if len(docs) == 0:
-        response = JSONResponse(content=[])
-        response.status_code = 200
-        return response
+        return []
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     for review in docs:
         if user != None and userID in review["likedBy"]:

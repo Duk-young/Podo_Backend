@@ -63,13 +63,77 @@ async def get_support_tickets(
         response = JSONResponse(content="User is not authorized for this action")
         response.status_code = 401
         return response
-    supportTickets = (
-        request.app.mongodb["supportTicket"]
-        .find({}, {"_id": 0})
-        .sort("_id", -1)
-        .skip(toSkip)
-        .limit(num)
-    )
+    if requester["status"] == 2:
+        supportTickets = request.app.mongodb["supportTicket"].aggregate(
+            [
+                {"$match": {}},
+                {
+                    "$lookup": {
+                        "from": "user",
+                        "localField": "userID",
+                        "foreignField": "userID",
+                        "pipeline": [
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                    "username": 1,
+                                }
+                            }
+                        ],
+                        "as": "userInfo",
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                    }
+                },
+                {"$sort": {"_id": -1}},
+                {"$skip": toSkip},
+                {"$limit": num},
+            ]
+        )
+    else:
+        supportTickets = request.app.mongodb["supportTicket"].aggregate(
+            [
+                {"$match": {"userID": userID}},
+                {
+                    "$lookup": {
+                        "from": "user",
+                        "localField": "userID",
+                        "foreignField": "userID",
+                        "pipeline": [
+                            {
+                                "$project": {
+                                    "_id": 0,
+                                    "username": 1,
+                                }
+                            }
+                        ],
+                        "as": "userInfo",
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                    }
+                },
+                {"$sort": {"_id": -1}},
+                {"$skip": toSkip},
+                {"$limit": num},
+            ]
+        )
+    docs = await supportTickets.to_list(None)
+    if len(docs) == 0:
+        response = JSONResponse(content=[])
+        response.status_code = 200
+        return response
+    result = []
+    for doc in docs:
+        if len(doc["userInfo"]) != 0:
+            doc["username"] = doc["userInfo"][0]["username"]
+            doc.pop("userInfo")
+            result.append(doc)
     docs = await supportTickets.to_list(None)
     if len(docs) == 0:
         response = JSONResponse(content="No support tickets exists in DB")

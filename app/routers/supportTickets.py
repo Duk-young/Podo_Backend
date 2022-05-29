@@ -49,7 +49,7 @@ async def get_total_support_tickets(request: Request, userID: int = -1):
 
 @router.get("")
 async def get_support_tickets(
-    request: Request, userID: int = -1, status: int = 1, num: int = 10, page: int = 1
+    request: Request, userID: int = -1, status: int = 0, num: int = 10, page: int = 1
 ):
     toSkip = num * (page - 1)
     requester = await request.app.mongodb["user"].find_one(
@@ -66,7 +66,7 @@ async def get_support_tickets(
     if requester["status"] == 2:
         supportTickets = request.app.mongodb["supportTicket"].aggregate(
             [
-                {"$match": {}},
+                {"$match": {"status": status}},
                 {
                     "$lookup": {
                         "from": "user",
@@ -96,7 +96,7 @@ async def get_support_tickets(
     else:
         supportTickets = request.app.mongodb["supportTicket"].aggregate(
             [
-                {"$match": {"userID": userID}},
+                {"$match": {"userID": userID, "status": status}},
                 {
                     "$lookup": {
                         "from": "user",

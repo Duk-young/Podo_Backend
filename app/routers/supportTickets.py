@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 from pymongo import ReturnDocument
 from fastapi.encoders import jsonable_encoder
 from starlette.status import HTTP_200_OK, HTTP_201_CREATED
-from ..models.TicketModel import SupportTicketModel
+from ..models.TicketModel import SupportTicketModel, SupportTicketAnswerModel
 from typing import List, Optional
 from tempfile import TemporaryFile
 from datetime import datetime
@@ -204,6 +204,46 @@ async def get_support_tickets(request: Request, userID: int = -1, ticketID: int 
     return supportTicket
 
 
+@router.put("/answer")
+async def update_support_tickets(
+    request: Request,
+    ticketID: int = -1,
+    ticketInfo: SupportTicketAnswerModel = Body(...),
+):
+    json_ticketInfo = jsonable_encoder(ticketInfo)
+    admin = await request.app.mongodb["user"].find_one(
+        {"userID": json_ticketInfo["adminID"]}, {"_id": 0}
+    )
+    if admin == None:
+        response = JSONResponse(content="No such user exists")
+        response.status_code = 404
+        return response
+    if admin["status"] != 2:
+        response = JSONResponse(content="The user is not admin")
+        response.status_code = 401
+        return response
+    supportTicket = await request.app.mongodb["supportTicket"].find_one_and_update(
+        {"ticketID": ticketID},
+        {
+            "$set": {
+                "adminID": json_ticketInfo["adminID"],
+                "adminResponse": json_ticketInfo["adminResponse"],
+                "lastUpdatedAt": json_ticketInfo["lastUpdatedAt"],
+            }
+        },
+        {"_id": 0},
+        return_document=ReturnDocument.AFTER,
+    )
+    if supportTicket == None:
+        response = JSONResponse(content="An error occurred while updating ticket")
+        response.status_code = 404
+        return response
+    return {
+        "ticketID": ticketID,
+        "lastUpdatedAt": supportTicket["lastUpdatedAt"],
+    }
+
+
 @router.put("/{tickeID}")
 async def update_support_tickets(
     request: Request, ticketID: int = -1, ticketInfo: SupportTicketModel = Body(...)
@@ -222,46 +262,6 @@ async def update_support_tickets(
             "$set": {
                 "title": json_ticketInfo["title"],
                 "userQuestion": json_ticketInfo["userQuestion"],
-                "lastUpdatedAt": datetime.now()
-                .astimezone()
-                .strftime("%Y-%m-%d %H:%M:%S"),
-            }
-        },
-        {"_id": 0},
-        return_document=ReturnDocument.AFTER,
-    )
-    if supportTicket == None:
-        response = JSONResponse(content="An error occurred while updating ticket")
-        response.status_code = 404
-        return response
-    return {
-        "ticketID": ticketID,
-        "lastUpdatedAt": supportTicket["lastUpdatedAt"],
-    }
-
-
-@router.put("/{tickeID}/answer")
-async def update_support_tickets(
-    request: Request, ticketID: int = -1, ticketInfo: SupportTicketModel = Body(...)
-):
-    json_ticketInfo = jsonable_encoder(ticketInfo)
-    admin = await request.app.mongodb["user"].find_one(
-        {"userID": json_ticketInfo["adminID"]}, {"_id": 0}
-    )
-    if admin == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    if admin["status"] != 2:
-        response = JSONResponse(content="The user is not admin")
-        response.status_code = 401
-        return response
-    supportTicket = await request.app.mongodb["supportTicket"].find_one_and_update(
-        {"ticketID": ticketID, "userID": json_ticketInfo["userID"]},
-        {
-            "$set": {
-                "adminID": json_ticketInfo["adminID"],
-                "adminResponse": json_ticketInfo["adminResponse"],
                 "lastUpdatedAt": datetime.now()
                 .astimezone()
                 .strftime("%Y-%m-%d %H:%M:%S"),

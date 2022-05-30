@@ -449,6 +449,7 @@ async def get_wine_reviews(
                     "isDeleted": False,
                 }
             },
+            {"$sort": {"_id": -1}},
             {"$skip": toSkip},
             {"$limit": num},
             {

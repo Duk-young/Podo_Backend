@@ -17,6 +17,15 @@ class SupportTicketModel(BaseModel):
     )
 
 
+class SupportTicketAnswerModel(BaseModel):
+    ticketID: int = Field(...)
+    adminID: int = Field(...)
+    adminResponse: str = Field("")
+    lastUpdatedAt: datetime = Field(
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+    )
+
+
 class VerificationTicketModel(BaseModel):
     userID: int = Field(...)
     adminID: int = Field(None)
@@ -28,6 +37,16 @@ class VerificationTicketModel(BaseModel):
     createdAt: datetime = Field(
         datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )
+    lastUpdatedAt: datetime = Field(
+        datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+    )
+
+
+class VerificationTicketAnswerModel(BaseModel):
+    ticketID: int = Field(...)
+    adminID: int = Field(...)
+    status: int = Field(...)
+    adminFeedback: str = Field("")
     lastUpdatedAt: datetime = Field(
         datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )

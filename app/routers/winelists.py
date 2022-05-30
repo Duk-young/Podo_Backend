@@ -61,6 +61,7 @@ async def search_winelists(
                             "title": {"$regex": keyword, "$options": "i"},
                         },
                     },
+                    {"$sort": {"_id": -1}},
                     {"$skip": toSkip},
                     {"$limit": num},
                     {  # lookup for reviews
@@ -122,6 +123,7 @@ async def search_winelists(
                         "tags": {"$all": regexTags},
                     },
                 },
+                {"$sort": {"_id": -1}},
                 {"$skip": toSkip},
                 {"$limit": num},
                 {  # lookup for reviews
@@ -262,6 +264,7 @@ async def get_winelist(request: Request, winelistID: int = -1):
                     "winelistID": winelistID,
                 },
             },
+            {"$unwind": "$wines"},
             {  # lookup for wine
                 "$lookup": {
                     "from": "wine",
@@ -277,7 +280,31 @@ async def get_winelist(request: Request, winelistID: int = -1):
                             }
                         }
                     ],
-                    "as": "wines",
+                    "as": "wines.wineInfo",
+                }
+            },
+            {
+                "$group": {
+                    "_id": {"winelistID": "$winelistID"},
+                    "userID": {"$first": "$userID"},
+                    "title": {"$first": "$title"},
+                    "thumbnailImage": {"$first": "$thumbnailImage"},
+                    "tags": {"$first": "$tags"},
+                    "content": {"$first": "$content"},
+                    "wines": {
+                        "$push": {
+                            "wineID": {"$first": "$wines.wineInfo.wineID"},
+                            "name": {"$first": "$wines.wineInfo.name"},
+                            "images": {"$first": "$wines.wineInfo.images"},
+                            "sommelierComment": "$wines.sommelierComment",
+                        }
+                    },
+                    "isDeleted": {"$first": "$isDeleted"},
+                    "createdAt": {"$first": "$createdAt"},
+                    "lastUpdatedAt": {"$first": "$lastUpdatedAt"},
+                    "views": {"$first": "$views"},
+                    "likes": {"$first": "$likes"},
+                    "winelistID": {"$first": "$winelistID"},
                 }
             },
             {  # lookup for user
@@ -292,7 +319,7 @@ async def get_winelist(request: Request, winelistID: int = -1):
                                 "username": 1,
                                 "profileImage": 1,
                             }
-                        }
+                        },
                     ],
                     "as": "author",
                 }
@@ -300,6 +327,19 @@ async def get_winelist(request: Request, winelistID: int = -1):
             {
                 "$project": {
                     "_id": 0,
+                    "username": {"$first": "$author.username"},
+                    "profileImage": {"$first": "$author.profileImage"},
+                    "userID": 1,
+                    "thumbnailImage": 1,
+                    "tags": 1,
+                    "content": 1,
+                    "wines": 1,
+                    "isDeleted": 1,
+                    "createdAt": 1,
+                    "lastUpdatedAt": 1,
+                    "views": 1,
+                    "likes": 1,
+                    "winelistID": 1,
                 }
             },
         ]
@@ -310,9 +350,9 @@ async def get_winelist(request: Request, winelistID: int = -1):
         return response
     doc = await winelist.to_list(None)
     doc = doc[0]
-    doc["username"] = doc["author"][0]["username"]
-    doc["profileImage"] = doc["author"][0]["profileImage"]
-    doc.pop("author")
+    # doc["username"] = doc["author"][0]["username"]
+    # doc["profileImage"] = doc["author"][0]["profileImage"]
+    # doc.pop("author")
     return doc
 
 

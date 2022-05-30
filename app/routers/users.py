@@ -1007,3 +1007,32 @@ async def comment_population(
         if appendComment == None:
             raise HTTPException(400)
         print("commentID", newCommentID["index"], "has been added to database.")
+
+
+@router.post("/support-tickets-population")
+async def support_ticket_population(request: Request, userID: int = -1, num: int = 10):
+    for i in range(num):
+        newTicketID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
+            {"_id": "supportTicket"}, {"$inc": {"index": 1}}, {"index": 1}
+        )
+        value = random.randint(0, num) + userID
+        supportTicket_json = {
+            "ticketID": newTicketID["index"],
+            "userID": userID,
+            "adminID": None,
+            "title": "How can I verify sommlier?" + str(value),
+            "userQuestion": "Please explain it step by step" + str(value),
+            "adminResponse": "",
+            "createdAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+            "lastUpdatedAt": datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        newSupportTicket = await request.app.mongodb["supportTicket"].insert_one(
+            supportTicket_json
+        )
+        if newSupportTicket == None:
+            raise HTTPException(400)
+        print(
+            "supportTicketID",
+            newTicketID["index"],
+            "has been added to database.",
+        )

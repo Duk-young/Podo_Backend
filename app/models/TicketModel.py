@@ -8,7 +8,7 @@ class SupportTicketModel(BaseModel):
     adminID: int = Field(None)
     title: str = Field(...)
     userQuestion: str = Field(...)
-    adminReponse: str = Field("")
+    adminResponse: str = Field("")
     createdAt: datetime = Field(
         datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
     )

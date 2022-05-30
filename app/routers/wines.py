@@ -41,6 +41,7 @@ async def search_wines(
     minRating: float = 0,
     keyword: str = "",
     tags: list[str] = Query([]),
+    sort: int = 0,
 ):
     # TODO sorting 방식
     toSkip = num * (page - 1)
@@ -67,7 +68,6 @@ async def search_wines(
         # )
         wines = request.app.mongodb["wine"].aggregate(
             [
-                {"$sort": {"_id": -1}},
                 {
                     "$match": {
                         "name": {"$regex": keyword, "$options": "i"},
@@ -77,6 +77,7 @@ async def search_wines(
                         "isDeleted": False,
                     }
                 },
+                {"$sort": {"_id": -1}},
                 {"$skip": toSkip},
                 {"$limit": num},
                 {  # lookup for reviews
@@ -114,7 +115,6 @@ async def search_wines(
 
         wines = request.app.mongodb["wine"].aggregate(
             [
-                {"$sort": {"_id": -1}},
                 {
                     "$match": {
                         "name": {"$regex": keyword, "$options": "i"},
@@ -125,6 +125,7 @@ async def search_wines(
                         "tags": {"$all": regexTags},
                     }
                 },
+                {"$sort": {"_id": -1}},
                 {"$skip": toSkip},
                 {"$limit": num},
                 {  # lookup for reviews
@@ -163,8 +164,8 @@ async def search_wines(
             doc["totalReviews"] = 0
         doc.pop("reviews")
     if len(docs) == 0:
-        response = JSONResponse(content="No wines exists")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     return docs
 
@@ -600,8 +601,15 @@ async def post_wine_reviews(
         response.status_code = 404
         return response
     user = await request.app.mongodb["user"].find_one(
-        {"userID": json_reviewInfo["userID"]}, {"_id": 0}
+        {"userID": json_reviewInfo["userID"], "isDeleted": False}, {"_id": 0}
     )
+    reviewDuplicate = await request.app.mongodb["wine"].find_one(
+        {"userID": json_reviewInfo["userID"], "wineID": wineID, "isDeleted": False}
+    )
+    if reviewDuplicate != None:
+        response = JSONResponse(content="User cannot review a wine twice")
+        response.status_code = 401
+        return response
     if user == None:
         response = JSONResponse(content="userID is invalid. No such user exists in DB")
         response.status_code = 404

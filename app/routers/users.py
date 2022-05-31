@@ -255,6 +255,7 @@ async def get_user_followings(request: Request, userID: int = -1):
                     "localField": "followings",
                     "foreignField": "userID",
                     "pipeline": [
+                        {"$match": {"isDeleted": False}},
                         {
                             "$project": {
                                 "_id": 0,
@@ -263,7 +264,7 @@ async def get_user_followings(request: Request, userID: int = -1):
                                 "profileImage": 1,
                                 "status": 1,
                             }
-                        }
+                        },
                     ],
                     "as": "followings",
                 }
@@ -282,7 +283,7 @@ async def get_user_followings(request: Request, userID: int = -1):
     )
     user = await user.to_list(None)
     if len(user) == 0:
-        response = JSONResponse(content="userID : No such user exists")
+        response = JSONResponse(content="No followings exist")
         response.status_code = 404
         return response
     return user[0]
@@ -299,6 +300,7 @@ async def get_user_followers(request: Request, userID: int = -1):
                     "localField": "followers",
                     "foreignField": "userID",
                     "pipeline": [
+                        {"$match": {"isDeleted": False}},
                         {
                             "$project": {
                                 "_id": 0,
@@ -307,7 +309,7 @@ async def get_user_followers(request: Request, userID: int = -1):
                                 "profileImage": 1,
                                 "status": 1,
                             }
-                        }
+                        },
                     ],
                     "as": "followers",
                 }
@@ -326,7 +328,7 @@ async def get_user_followers(request: Request, userID: int = -1):
     )
     user = await user.to_list(None)
     if len(user) == 0:
-        response = JSONResponse(content="userID : No such user exists")
+        response = JSONResponse(content="No followers exist")
         response.status_code = 404
         return response
     return user[0]

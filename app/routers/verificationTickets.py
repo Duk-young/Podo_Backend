@@ -126,7 +126,6 @@ async def get_verification_tickets(
             ]
         )
     docs = await verificationTickets.to_list(None)
-    print(docs)
     if len(docs) == 0:
         response = JSONResponse(content=[])
         response.status_code = 200

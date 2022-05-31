@@ -265,36 +265,36 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
         response = JSONResponse(content="No such wine exists")
         response.status_code = 404
         return response
-    reviews = await get_wine_reviews(
-        request=request, wineID=wineID, num=num, userID=userID
-    )
-    if len(reviews) == 0:
-        wine["reviews"] = []
-    else:
-        wine["reviews"] = reviews
+    # reviews = await get_wine_reviews(
+    #     request=request, wineID=wineID, num=num, userID=userID
+    # )
+    # if len(reviews) == 0:
+    #     wine["reviews"] = []
+    # else:
+    #     wine["reviews"] = reviews
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user != None and wineID in user["likedWines"]:
         wine["userLiked"] = True
     else:
         wine["userLiked"] = False
-    # recommendations = get_wine_recommendations(
-    #     request=request, userID=userID, wineID=wineID, num=5
-    # )
-    # recommended_wines = request.app.mongodb["wine"].find(
-    #     {"wineID": {"$in": recommendations}},
-    #     {
-    #         "_id": 0,
-    #         "wineID": 1,
-    #         "name": 1,
-    #         "tags": 1,
-    #         "images": 1,
-    #         "rating": 1,
-    #         "price": 1,
-    #         "grape": 1,
-    #     },
-    # )
-    # recommended_wines = await recommended_wines.to_list(None)
-    # wine["recommendations"] = recommended_wines
+    recommendations = get_wine_recommendations(
+        request=request, userID=userID, wineID=wineID, num=5
+    )
+    recommended_wines = request.app.mongodb["wine"].find(
+        {"wineID": {"$in": recommendations}},
+        {
+            "_id": 0,
+            "wineID": 1,
+            "name": 1,
+            "tags": 1,
+            "images": 1,
+            "rating": 1,
+            "price": 1,
+            "grape": 1,
+        },
+    )
+    recommended_wines = await recommended_wines.to_list(None)
+    wine["recommendations"] = recommended_wines
     return wine
 
 

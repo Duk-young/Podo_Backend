@@ -47,6 +47,14 @@ async def search_wines(
 ):
     # TODO sorting 방식
     toSkip = num * (page - 1)
+    sortOptions = {
+        0: {"rating": -1},
+        1: {"likes": -1},
+        2: {"totalReviews": -1},
+        3: {"price": 1},
+        4: {"price": -1},
+    }
+    sortOption = sortOptions[sort]
     wines = None
     print(tags)
     if len(tags) == 0:
@@ -79,30 +87,30 @@ async def search_wines(
                         "isDeleted": False,
                     }
                 },
-                {"$sort": {"_id": -1}},
+                {"$sort": sortOption},
                 {"$skip": toSkip},
                 {"$limit": num},
-                {  # lookup for reviews
-                    "$lookup": {
-                        "from": "review",
-                        "localField": "wineID",
-                        "foreignField": "wineID",
-                        "pipeline": [
-                            {
-                                "$group": {
-                                    "_id": None,
-                                    "totalReviews": {"$sum": 1},
-                                },
-                            },
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                },
-                            },
-                        ],
-                        "as": "reviews",
-                    }
-                },
+                # {  # lookup for reviews
+                #     "$lookup": {
+                #         "from": "review",
+                #         "localField": "wineID",
+                #         "foreignField": "wineID",
+                #         "pipeline": [
+                #             {
+                #                 "$group": {
+                #                     "_id": None,
+                #                     "totalReviews": {"$sum": 1},
+                #                 },
+                #             },
+                #             {
+                #                 "$project": {
+                #                     "_id": 0,
+                #                 },
+                #             },
+                #         ],
+                #         "as": "reviews",
+                #     }
+                # },
                 {
                     "$project": {
                         "_id": 0,
@@ -127,30 +135,30 @@ async def search_wines(
                         "tags": {"$all": regexTags},
                     }
                 },
-                {"$sort": {"_id": -1}},
+                {"$sort": sortOption},
                 {"$skip": toSkip},
                 {"$limit": num},
-                {  # lookup for reviews
-                    "$lookup": {
-                        "from": "review",
-                        "localField": "wineID",
-                        "foreignField": "wineID",
-                        "pipeline": [
-                            {
-                                "$group": {
-                                    "_id": None,
-                                    "totalReviews": {"$sum": 1},
-                                },
-                            },
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                },
-                            },
-                        ],
-                        "as": "reviews",
-                    }
-                },
+                # {  # lookup for reviews
+                #     "$lookup": {
+                #         "from": "review",
+                #         "localField": "wineID",
+                #         "foreignField": "wineID",
+                #         "pipeline": [
+                #             {
+                #                 "$group": {
+                #                     "_id": None,
+                #                     "totalReviews": {"$sum": 1},
+                #                 },
+                #             },
+                #             {
+                #                 "$project": {
+                #                     "_id": 0,
+                #                 },
+                #             },
+                #         ],
+                #         "as": "reviews",
+                #     }
+                # },
                 {
                     "$project": {
                         "_id": 0,
@@ -159,12 +167,6 @@ async def search_wines(
             ]
         )
     docs = await wines.to_list(None)
-    for doc in docs:
-        if len(doc["reviews"]) > 0:
-            doc["totalReviews"] = doc["reviews"][0]["totalReviews"]
-        else:
-            doc["totalReviews"] = 0
-        doc.pop("reviews")
     if len(docs) == 0:
         response = JSONResponse(content=[])
         response.status_code = 200
@@ -450,7 +452,7 @@ async def get_wine_reviews(
     request: Request,
     wineID: int = -1,
     num: int = 20,
-    sort: int = 1,
+    sort: int = 0,
     page: int = 1,
     userID: int = -1,
 ):
@@ -968,17 +970,25 @@ async def update_rating(request: Request, wineID: int = -1):
         ]
     )
     reviews = await reviews.to_list(None)
-    reviews = reviews[0]
-    totalRating = float(
-        "{:.2f}".format(float(reviews["rating"]) / int(reviews["totalReviews"]))
-    )
-    wine = await request.app.mongodb["wine"].find_one_and_update(
-        {"wineID": wineID},
-        {"$set": {"rating": totalRating}},
-        {"_id": 0},
-    )
-    if wine == None:
-        response = JSONResponse(content="An error occured during the update")
-        response.status_code = 400
-        return response
+    if len(reviews) > 0:
+        reviews = reviews[0]
+        totalRating = float(
+            "{:.2f}".format(float(reviews["rating"]) / int(reviews["totalReviews"]))
+        )
+        wine = await request.app.mongodb["wine"].find_one_and_update(
+            {"wineID": wineID},
+            {"$set": {"rating": totalRating, "totalReviews": reviews["totalReviews"]}},
+            {"_id": 0},
+        )
+        if wine == None:
+            response = JSONResponse(content="An error occured during the update")
+            response.status_code = 400
+            return response
     return
+
+
+@router.get("/update-rating/all")
+async def update_wine_ratings(request: Request):
+    for i in range(3000):
+        await update_rating(request=request, wineID=i)
+        print("wineID", i, "updated.")

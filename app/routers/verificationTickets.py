@@ -49,7 +49,7 @@ async def get_total_verification_tickets(request: Request, userID: int = -1):
 
 @router.get("")
 async def get_verification_tickets(
-    request: Request, userID: int = -1, status: int = 0, num: int = 10, page: int = 1
+    request: Request, userID: int = -1, status: int = -1, num: int = 10, page: int = 1
 ):  # TODO DOC 수정 필요 TODO username, isDeleted 적용
     toSkip = num * (page - 1)
     requester = await request.app.mongodb["user"].find_one(
@@ -61,9 +61,8 @@ async def get_verification_tickets(
         return response
     verificationTickets = None
     ticketStatus = []
-    if status == 0:
-        ticketStatus.append(1)
-        ticketStatus.append(2)
+    if status == -1:
+        ticketStatus = [0, 1, 2]
     else:
         ticketStatus.append(status)
     if requester["status"] == 2:
@@ -127,6 +126,7 @@ async def get_verification_tickets(
             ]
         )
     docs = await verificationTickets.to_list(None)
+    print(docs)
     if len(docs) == 0:
         response = JSONResponse(content=[])
         response.status_code = 200

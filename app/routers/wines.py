@@ -21,6 +21,7 @@ from ..models.WineModel import WineModel
 from ..models.ReviewModel import ReviewModel, CommentModel
 from datetime import datetime
 import re
+from time import time
 
 router = APIRouter(
     prefix="/wines",
@@ -255,6 +256,8 @@ async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
 @router.get("/{wineID}")
 async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3):
     # TODO TMR
+    print("wineID:", wineID)
+    start = time()
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {"$inc": {"views": 1}},
@@ -265,9 +268,15 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
         response = JSONResponse(content="No such wine exists")
         response.status_code = 404
         return response
+    end = time()
+    print("Fetch wine doc: {:.4f}s".format(end - start))
+    start = time()
     reviews = await get_wine_reviews(
         request=request, wineID=wineID, num=num, userID=userID
     )
+    end = time()
+    print("Fetch reviews: {:.4f}s".format(end - start))
+
     if len(reviews) == 0:
         wine["reviews"] = []
     else:
@@ -277,6 +286,7 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
         wine["userLiked"] = True
     else:
         wine["userLiked"] = False
+    start = time()
     recommendations = get_wine_recommendations(
         request=request, userID=userID, wineID=wineID, num=5
     )
@@ -295,6 +305,8 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
     )
     recommended_wines = await recommended_wines.to_list(None)
     wine["recommendations"] = recommended_wines
+    end = time()
+    print("Fetch recommendations : {:.4f}s".format(end - start))
     return wine
 
 

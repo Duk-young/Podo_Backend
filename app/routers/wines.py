@@ -288,7 +288,15 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
     )
     recommended_wines = request.app.mongodb["wine"].find(
         {"wineID": {"$in": recommendations}},
-        {"_id": 0, "wineID": 1, "name": 1, "tags": 1, "images": 1, "rating": 1},
+        {
+            "_id": 0,
+            "wineID": 1,
+            "name": 1,
+            "tags": 1,
+            "images": 1,
+            "rating": 1,
+            "price": 1,
+        },
     )
     recommended_wines = await recommended_wines.to_list(None)
     wine["recommendations"] = recommended_wines

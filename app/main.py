@@ -13,6 +13,7 @@ from .routers import (
     supportTickets,
     s3upload,
     tag,
+    wineRecommendations,
 )
 
 
@@ -71,6 +72,7 @@ app.include_router(supportTickets.router)
 app.include_router(verificationTickets.router)
 app.include_router(s3upload.router)
 app.include_router(tag.router)
+app.include_router(wineRecommendations.router)
 
 
 @app.get("/")

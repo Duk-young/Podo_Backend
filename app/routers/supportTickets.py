@@ -59,10 +59,6 @@ async def get_support_tickets(
         response = JSONResponse(content="No such user exists")
         response.status_code = 404
         return response
-    if requester["status"] != 2:
-        response = JSONResponse(content="User is not authorized for this action")
-        response.status_code = 401
-        return response
     ticketStatus = []
     if status == 0:
         ticketStatus.append(1)
@@ -140,12 +136,11 @@ async def get_support_tickets(
             doc["username"] = doc["userInfo"][0]["username"]
             doc.pop("userInfo")
             result.append(doc)
-    docs = await supportTickets.to_list(None)
     if len(docs) == 0:
         response = JSONResponse(content="No support tickets exists in DB")
         response.status_code = 204
         return response
-    return docs
+    return result
 
 
 @router.post("")
@@ -174,8 +169,8 @@ async def post_support_ticket(
         return response
     response = JSONResponse(
         content={
-            "ticketID": newSupportTicket["ticketID"],
-            "createdAt": newSupportTicket["createdAt"],
+            "ticketID": newTicketID["index"],
+            "createdAt": json_ticketInfo["createdAt"],
         }
     )
     return response

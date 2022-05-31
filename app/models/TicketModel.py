@@ -7,6 +7,7 @@ class SupportTicketModel(BaseModel):
     userID: int = Field(...)
     adminID: int = Field(None)
     title: str = Field(...)
+    status: int = Field(2)
     userQuestion: str = Field(...)
     adminResponse: str = Field("")
     createdAt: datetime = Field(

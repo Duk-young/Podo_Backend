@@ -178,12 +178,6 @@ async def total_wines(request: Request):
     return {"totalWines": len(docs)}
 
 
-@router.get("/recommended")
-async def get_recommended_wines(request: Request, userID: int = -1, num: int = 10):
-    # TODO
-    return 0
-
-
 @router.post("")
 async def post_wine(
     request: Request, userID: int = -1, wineInfo: WineModel = Body(...)
@@ -296,6 +290,7 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
             "images": 1,
             "rating": 1,
             "price": 1,
+            "grape": 1,
         },
     )
     recommended_wines = await recommended_wines.to_list(None)

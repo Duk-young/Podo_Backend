@@ -286,6 +286,12 @@ async def get_user_followings(request: Request, userID: int = -1):
         response = JSONResponse(content="No followings exist")
         response.status_code = 404
         return response
+    followingIDs = []
+    for following in user[0]["followings"]:
+        followingIDs.append(following["userID"])
+    await request.app.mongodb["user"].update_one(
+        {"userID": userID}, {"$set": {"followings": followingIDs}}
+    )
     return user[0]
 
 
@@ -331,6 +337,12 @@ async def get_user_followers(request: Request, userID: int = -1):
         response = JSONResponse(content="No followers exist")
         response.status_code = 404
         return response
+    followerIDs = []
+    for follower in user[0]["followers"]:
+        followerIDs.append(follower["userID"])
+    await request.app.mongodb["user"].update_one(
+        {"userID": userID}, {"$set": {"followers": followerIDs}}
+    )
     return user[0]
 
 

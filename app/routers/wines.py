@@ -455,18 +455,6 @@ async def get_wine_reviews(
     userID: int = -1,
 ):
     toSkip = num * (page - 1)
-    wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
-    if wine == None:
-        response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
-        response.status_code = 404
-        return response
-    # reviews = (
-    #     request.app.mongodb["review"]
-    #     .find({"wineID": wineID}, {"_id": 0})
-    #     .sort("_id", -1)
-    #     .skip(toSkip)
-    #     .limit(num)
-    # )
     reviews = request.app.mongodb["review"].aggregate(
         [
             {
@@ -558,9 +546,12 @@ async def get_wine_reviews(
     docs = await reviews.to_list(None)
     if len(docs) == 0:
         return []
-    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+    # user = await request.app.mongodb["user"].find_one(
+    #     {"userID": userID}, {"_id": 0, "userID": 1}
+    # )
     for review in docs:
-        if user != None and userID in review["likedBy"]:
+        # if user != None and userID in review["likedBy"]:
+        if userID in review["likedBy"]:
             review["userLiked"] = True
         else:
             review["userLiked"] = False

@@ -62,23 +62,31 @@ async def search_winelists(
         user = await request.app.mongodb["user"].find_one(
             {"userID": userID}, {"_id": 0, "userID": 1, "followings": 1}
         )
+    regexTags = []
+    if len(tags) != 0:
+        for tag in tags:
+            regexTags.append(re.compile(tag, re.IGNORECASE))
     match = {
         "$match": {
             "isDeleted": False,
-            "title": {"$regex": keyword, "$options": "i"},
+            # "title": {"$regex": keyword, "$options": "i"},
         }
     }
-
+    if isOr == True:
+        match["$match"]["$or"] = [
+            {"title": {"$regex": keyword, "$options": "i"}},
+        ]
+        if len(tags) != 0:
+            match["$match"]["$or"].append({"tags": {"$all": regexTags}})
+    else:
+        match["$match"]["title"] = {"$regex": keyword, "$options": "i"}
+        if len(tags) != 0:
+            match["$match"]["tags"] = {"$all": regexTags}
     if user:
         match["$match"]["userID"] = {"$in": user["followings"]}
     print(match)
     toSkip = num * (page - 1)
     # winelists = None
-    if len(tags) != 0:
-        regexTags = []
-        for tag in tags:
-            regexTags.append(re.compile(tag, re.IGNORECASE))
-        match["$match"]["tags"] = {"$all": regexTags}
     winelists = request.app.mongodb["winelist"].aggregate(
         [  # {"$sort": {sortingOption: -1}},
             match,

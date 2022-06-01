@@ -516,11 +516,11 @@ async def get_wine_reviews(
     docs = await reviews.to_list(None)
     if len(docs) == 0:
         return []
-    # user = await request.app.mongodb["user"].find_one(
-    #     {"userID": userID}, {"_id": 0, "userID": 1}
-    # )
+    result = []
     for review in docs:
         # if user != None and userID in review["likedBy"]:
+        if review["isDeleted"] == True:
+            continue
         if userID in review["likedBy"]:
             review["userLiked"] = True
         else:
@@ -542,6 +542,7 @@ async def get_wine_reviews(
             review["status"] = review["status"][0]
         if len(review["comments"][0]) == 0:
             review["comments"] = []
+        comments = []
         for comment in review["comments"]:
             if "username" not in comment.keys():
                 comment["username"] = "Deleted User"
@@ -549,7 +550,12 @@ async def get_wine_reviews(
                     "profileImage"
                 ] = "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/user/default-profile-image.jpg"
                 comment["status"] = 0
-    return docs
+            if comment["isDeleted"] == False:
+                comments.append(comment)
+        review["comments"] = comments
+        result.append(review)
+
+    return result
 
 
 @router.get("/{wineID}/reviews/{reviewID}/comments")
@@ -567,16 +573,75 @@ async def get_wine_review_comments(
         response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
         response.status_code = 404
         return response
-    review = await request.app.mongodb["review"].find_one(
-        {"wineID": wineID, "reviewID": reviewID}, {"_id": 0}
+    # review = await request.app.mongodb["review"].find_one(
+    #     {"wineID": wineID, "reviewID": reviewID}, {"_id": 0}
+    # )
+    comments = request.app.mongodb["review"].aggregate(
+        [
+            {"$match": {"reviewID": reviewID}},
+            {"$sort": {"_id": -1}},
+            {"$skip": toSkip},
+            {"$limit": num},
+            {"$unwind": "$comments"},
+            {"$unwind": {"path": "$comments", "preserveNullAndEmptyArrays": True}},
+            {
+                "$lookup": {
+                    "from": "user",
+                    "localField": "comments.userID",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "username": 1,
+                                "profileImage": 1,
+                                "status": 1,
+                            }
+                        }
+                    ],
+                    "as": "comments.userInfo",
+                }
+            },
+            {
+                "$group": {
+                    "_id": {"reviewID": "$reviewID"},
+                    "comments": {
+                        "$push": {
+                            "commentID": "$comments.commentID",
+                            "userID": "$comments.userID",
+                            "content": "$comments.content",
+                            "createdAt": "$comments.createdAt",
+                            "lastUpdatedAt": "$comments.lastUpdatedAt",
+                            "isDeleted": "$comments.isDeleted",
+                            "username": {"$first": "$comments.userInfo.username"},
+                            "profileImage": {
+                                "$first": "$comments.userInfo.profileImage"
+                            },
+                            "status": {"$first": "$comments.userInfo.status"},
+                        }
+                    },
+                }
+            },
+            {"$project": {"_id": 0}},
+        ]
     )
-
-    if review == None:
+    comments = await comments.to_list(None)
+    comments = comments[0]["comments"]
+    if len(comments[0]) == 0:
         response = JSONResponse(content=[])
         response.status_code = 200
         return response
-    print(review)
-    return review["comments"][toSkip : (toSkip + num)]
+    result = []
+    for comment in comments:
+        if "username" not in comment.keys():
+            comment["username"] = "Deleted User"
+            comment[
+                "profileImage"
+            ] = "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/user/default-profile-image.jpg"
+            comment["status"] = 0
+        if comment["isDeleted"] == False:
+            result.append(comment)
+    return result
 
 
 @router.post("/{wineID}/reviews")

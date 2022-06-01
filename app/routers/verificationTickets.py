@@ -122,6 +122,16 @@ async def post_verification_ticket(
         response = JSONResponse(content="No such user exists")
         response.status_code = 404
         return response
+    checkPendingTickets = request.app.mongodb["verificationTicket"].find(
+        {"userID": json_ticketInfo["userID"], "status": 2}, {"_id": 0, "ticketID": 1}
+    )
+    checkPendingTickets = await checkPendingTickets.to_list(None)
+    if len(checkPendingTickets) != 0 or user["status"] >= 1:
+        response = JSONResponse(
+            content="User cannot create a verification ticket. User is already Sommelier or pending ticket exists"
+        )
+        response.status_code = 401
+        return response
     newTicketID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
         {"_id": "verificationTicket"}, {"$inc": {"index": 1}}, {"index": 1}
     )

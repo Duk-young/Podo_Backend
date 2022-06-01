@@ -271,6 +271,9 @@ async def get_winelist(request: Request, winelistID: int = -1):
                             "name": {"$first": "$wines.wineInfo.name"},
                             "images": {"$first": "$wines.wineInfo.images"},
                             "sommelierComment": "$wines.sommelierComment",
+                            "rating": {"$first": "$wines.wineInfo.rating"},
+                            "price": {"$first": "$wines.wineInfo.price"},
+                            "tags": {"$first": "$wines.wineInfo.tags"},
                         }
                     },
                     "isDeleted": {"$first": "$isDeleted"},

@@ -248,6 +248,9 @@ async def get_winelist(request: Request, winelistID: int = -1):
                                 "wineID": 1,
                                 "name": 1,
                                 "images": 1,
+                                "rating": 1,
+                                "price": 1,
+                                "tags": 1,
                             }
                         }
                     ],

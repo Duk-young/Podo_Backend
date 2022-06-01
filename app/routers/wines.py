@@ -59,8 +59,10 @@ async def search_wines(
     match = {
         "$match": {
             "name": {"$regex": keyword, "$options": "i"},
-            "price": {"$gte": minPrice},
-            "price": {"$lte": maxPrice},
+            "$and": [
+                {"price": {"$gte": minPrice}},
+                {"price": {"$lte": maxPrice}},
+            ],
             "rating": {"$gte": minRating},
             "isDeleted": False,
         }

@@ -327,6 +327,7 @@ async def get_winelist(request: Request, winelistID: int = -1):
             {
                 "$project": {
                     "_id": 0,
+                    "title": 1,
                     "username": {"$first": "$author.username"},
                     "profileImage": {"$first": "$author.profileImage"},
                     "userID": 1,

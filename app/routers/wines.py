@@ -605,7 +605,8 @@ async def get_wine_review_comments(
         response = JSONResponse(content="No reviews exists")
         response.status_code = 204
         return response
-    return review["comments"][toSkip : toSkip + num]
+    print(review)
+    return review["comments"][toSkip : (toSkip + num)]
 
 
 @router.post("/{wineID}/reviews")

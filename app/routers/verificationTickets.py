@@ -67,6 +67,12 @@ async def get_verification_tickets(
     match = {"$match": {"status": {"$in": ticketStatus}}}
     if requester["status"] != 2:
         match["$match"]["userID"] = userID
+    allVerificationTickets = request.app.mongodb["verificationTicket"].find(
+        match["$match"], {"_id": 0}
+    )
+    allVerificationTickets = await allVerificationTickets.to_list(None)
+    indexes = [ticket["ticketID"] for ticket in allVerificationTickets]
+    print(indexes)
     verificationTickets = request.app.mongodb["verificationTicket"].aggregate(
         [
             match,
@@ -80,6 +86,7 @@ async def get_verification_tickets(
                             "$project": {
                                 "_id": 0,
                                 "username": 1,
+                                "userID": 1,
                             }
                         }
                     ],
@@ -101,13 +108,15 @@ async def get_verification_tickets(
         response = JSONResponse(content=[])
         response.status_code = 200
         return response
-    result = []
+    for ticket in allVerificationTickets:
+        ticket["username"] = "Deleted User"
     for doc in docs:
-        if len(doc["userInfo"]) != 0:
+        if doc["ticketID"] in indexes and len(doc["userInfo"]) != 0:
             doc["username"] = doc["userInfo"][0]["username"]
             doc.pop("userInfo")
-            result.append(doc)
-    return result
+            allVerificationTickets[indexes.index(doc["ticketID"])] = doc
+
+    return allVerificationTickets
 
 
 @router.post("")

@@ -975,7 +975,6 @@ async def review_population(request: Request, userID: int = -1, num: int = 20):
             "tags": [],
             "comments": [],
             "likedBy": [],
-            "userStatus": 0,
         }
         while True:
             checkReview = await request.app.mongodb["review"].find_one(

@@ -46,128 +46,87 @@ async def search_winelists(
     num: int = 10,
     page: int = 1,
     tags: list[str] = Query([]),
-    sort: int = 1,
+    sort: int = 0,
+    userID: int = -1,
+    isOr: bool = False,
 ):
     # TODO 정렬
-    toSkip = num * (page - 1)
-    winelists = None
-    if len(tags) == 0:
-        winelists = (
-            request.app.mongodb["winelist"].aggregate(
-                [  # {"$sort": {sortingOption: -1}},
-                    {
-                        "$match": {
-                            "isDeleted": False,
-                            "title": {"$regex": keyword, "$options": "i"},
-                        },
-                    },
-                    {"$sort": {"_id": -1}},
-                    {"$skip": toSkip},
-                    {"$limit": num},
-                    {  # lookup for reviews
-                        "$lookup": {
-                            "from": "wine",
-                            "localField": "wines.wineID",
-                            "foreignField": "wineID",
-                            "pipeline": [
-                                {
-                                    "$project": {
-                                        "_id": 0,
-                                        "wineID": 1,
-                                        "name": 1,
-                                        "images": 1,
-                                    }
-                                }
-                            ],
-                            "as": "wines",
-                        }
-                    },
-                    {  # lookup for user
-                        "$lookup": {
-                            "from": "user",
-                            "localField": "userID",
-                            "foreignField": "userID",
-                            "pipeline": [
-                                {
-                                    "$project": {
-                                        "_id": 0,
-                                        "username": 1,
-                                        "profileImage": 1,
-                                    }
-                                }
-                            ],
-                            "as": "author",
-                        }
-                    },
-                    {
-                        "$project": {
-                            "_id": 0,
-                        }
-                    },
-                ]
-            )
-            # .sort("_id", -1)
-            # .skip(toSkip)
-            # .limit(num)
+    sortOptions = {
+        0: {"_id": -1},
+        1: {"views": -1},
+        1: {"likes": -1},
+    }
+    sortOption = sortOptions[sort]
+    user = None
+    if userID != -1:
+        user = await request.app.mongodb["user"].find_one(
+            {"userID": userID}, {"_id": 0, "userID": 1, "followings": 1}
         )
-    else:
+    match = {
+        "$match": {
+            "isDeleted": False,
+            "title": {"$regex": keyword, "$options": "i"},
+        }
+    }
+
+    if user:
+        match["$match"]["userID"] = {"$in": user["followings"]}
+    print(match)
+    toSkip = num * (page - 1)
+    # winelists = None
+    if len(tags) != 0:
         regexTags = []
         for tag in tags:
             regexTags.append(re.compile(tag, re.IGNORECASE))
-        winelists = request.app.mongodb["winelist"].aggregate(
-            [  # {"$sort": {sortingOption: -1}},
-                {
-                    "$match": {
-                        "isDeleted": False,
-                        "title": {"$regex": keyword, "$options": "i"},
-                        "tags": {"$all": regexTags},
-                    },
-                },
-                {"$sort": {"_id": -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
-                {  # lookup for reviews
-                    "$lookup": {
-                        "from": "wine",
-                        "localField": "wines.wineID",
-                        "foreignField": "wineID",
-                        "pipeline": [
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                    "wineID": 1,
-                                    "name": 1,
-                                    "images": 1,
-                                }
+        match["$match"]["tags"] = {"$all": regexTags}
+    winelists = request.app.mongodb["winelist"].aggregate(
+        [  # {"$sort": {sortingOption: -1}},
+            match,
+            {"$sort": sortOption},
+            {"$skip": toSkip},
+            {"$limit": num},
+            {  # lookup for reviews
+                "$lookup": {
+                    "from": "wine",
+                    "localField": "wines.wineID",
+                    "foreignField": "wineID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "wineID": 1,
+                                "name": 1,
+                                "images": 1,
                             }
-                        ],
-                        "as": "wines",
-                    }
-                },
-                {  # lookup for user
-                    "$lookup": {
-                        "from": "user",
-                        "localField": "userID",
-                        "foreignField": "userID",
-                        "pipeline": [
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                    "username": 1,
-                                    "profileImage": 1,
-                                }
+                        }
+                    ],
+                    "as": "wines",
+                }
+            },
+            {  # lookup for user
+                "$lookup": {
+                    "from": "user",
+                    "localField": "userID",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "username": 1,
+                                "profileImage": 1,
                             }
-                        ],
-                        "as": "author",
-                    }
-                },
-                {
-                    "$project": {
-                        "_id": 0,
-                    }
-                },
-            ]
-        )
+                        }
+                    ],
+                    "as": "author",
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                }
+            },
+        ]
+    )
     docs = await winelists.to_list(None)
     for doc in docs:
         doc["username"] = doc["author"][0]["username"]
@@ -176,10 +135,10 @@ async def search_winelists(
     return docs
 
 
-@router.get("/recommended")
-async def get_recommended_winelists(request: Request, userID: int = -1, num: int = 5):
-    # TODO
-    return 0
+# @router.get("/recommended")
+# async def get_recommended_winelists(request: Request, userID: int = -1, num: int = 5):
+#     # TODO
+#     return 0
 
 
 @router.post("")

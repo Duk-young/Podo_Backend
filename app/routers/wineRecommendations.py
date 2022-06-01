@@ -30,45 +30,25 @@ router = APIRouter(
         403: {"description": "Operation forbidden"},
     },
 )
+# Fetch base datas first
 load_dotenv()
 REVIEWS_DATA_URL = os.getenv("REVIEWS_DATA_URL")
 WINES_DATA_URL = os.getenv("WINES_DATA_URL")
 reviewData = pd.read_csv(REVIEWS_DATA_URL)
 winesData = pd.read_csv(WINES_DATA_URL)
+
+# base calculations to be done as server goes up
 countVect = CountVectorizer(min_df=0, ngram_range=(1, 2))
 tagsMat = countVect.fit_transform(winesData["tags"])
-tagsSim = cosine_similarity(tagsMat, tagsMat)
-tagsSimSortedInd = tagsSim.argsort()[:, ::-1]
-
-
-# @router.get("/wine-based")
-# async def wine_based_recommendations(request: Request, wineID: int = -1):
-#     similar_wines = find_sim_wine(
-#         winesData,
-#         tagsSimSortedInd,
-#         wineID,
-#         10,
-#     )
-#     print(similar_wines)
-#     return similar_wines[
-#         [
-#             "name",
-#             "tags",
-#             "grape",
-#             "lightness",
-#             "sweetness",
-#             "smoothness",
-#             "softness",
-#             "abv",
-#         ]
-#     ]
+tagsSim = cosine_similarity(tagsMat, tagsMat)  # tag similarities
+tagsSimSortedInd = tagsSim.argsort()[:, ::-1]  # tag similarities sorted
 
 
 @router.get("")
 def get_wine_recommendations(
     request: Request, userID: int = -1, wineID: int = -1, num: int = 5
 ):
-    ## For people who reviewed at least once
+    # find similar wines based on tags, sweetness, softness,.. etc
     similar_wines = find_sim_wine(
         winesData,
         tagsSimSortedInd,
@@ -76,16 +56,21 @@ def get_wine_recommendations(
         100,
     )
     indexes = list(similar_wines.index.values)
+    # filter review of wines based on wines that we have computed above.
     filteredReviews = reviewData[reviewData["wineID"].isin(indexes)]
     userWineRatings = filteredReviews.pivot(
         index="userID", columns="wineID", values="rating"
     ).fillna(0)
     userIDs = {userID for userID in filteredReviews["userID"]}
     try:
+        # if user does not exists or user has never written a review,
+        # return content-based computed wines
         userID = list(userIDs).index(userID)
     except ValueError as e:
         print("userID", userID, "has no review")
         return list(similar_wines["wineID"])[:num]
+    # Out of 100 wines selected from above, recommended wines will be chosen based on the predictions made with
+    # reviews that user have written.
     userWineRatings = pd.pivot_table(
         filteredReviews, index="userID", columns="wineID", values="rating"
     ).fillna(0)
@@ -93,6 +78,7 @@ def get_wine_recommendations(
     userRatingsMean = np.mean(matrix, axis=1)
     userMeanMatrix = matrix - userRatingsMean.reshape(-1, 1)
 
+    # SVD computations to get eigenvalues
     U, sigma, Vt = svds(userMeanMatrix, k=12)
     sigma = np.diag(sigma)
     SVDUserRatingPredictions = np.dot(np.dot(U, sigma), Vt) + userRatingsMean.reshape(
@@ -101,14 +87,16 @@ def get_wine_recommendations(
     SVDPredictions_df = pd.DataFrame(
         SVDUserRatingPredictions, columns=userWineRatings.columns
     )
-
+    # compute predictions
     alredayRated, predictions = recommend_wines(
         SVDPredictions_df, userID, winesData, filteredReviews, num
     )
+    # return best [num] number of predictions.
     return list(predictions["wineID"])[:num]
 
 
 def find_sim_wine(df, sorted_ind, wineID, top_n=10):
+    # return top_n number of wines based on the similarities between wines.
     wineNames = df[df["wineID"] == wineID]
     nameIndexes = wineNames.index.values
     similarWineIndexes = sorted_ind[nameIndexes, : (top_n + 1)]
@@ -119,6 +107,7 @@ def find_sim_wine(df, sorted_ind, wineID, top_n=10):
 
 
 def recommend_wines(SVDPredictions_df, userID, winesData, ratingsData, num=5):
+    # return top [num] number of wines based on the predictions made.
     sorted_user_predictions = SVDPredictions_df.iloc[userID].sort_values(
         ascending=False
     )
@@ -141,6 +130,7 @@ def recommend_wines(SVDPredictions_df, userID, winesData, ratingsData, num=5):
 
 @router.get("/update")
 async def update_recommendation_files(request: Request):
+    # update the csv files and global variables once the csv files gets uploaded to S3 by scheduler.
     global reviewData, winesData, countVect, tagsMat, tagsSim, tagsSimSortedInd
     reviewData = pd.read_csv(REVIEWS_DATA_URL)
     winesData = pd.read_csv(WINES_DATA_URL)

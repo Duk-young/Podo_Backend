@@ -100,22 +100,9 @@ async def total_wines(request: Request):
 
 
 @router.post("")
-async def post_wine(
-    request: Request, userID: int = -1, wineInfo: WineModel = Body(...)
-):
+async def post_wine(request: Request, wineInfo: WineModel = Body(...)):
     json_wineInfo = jsonable_encoder(wineInfo)
     print(json_wineInfo)
-    requester = await request.app.mongodb["user"].find_one(
-        {"userID": userID}, {"_id": 0}
-    )
-    if requester == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    if requester["status"] != 2:
-        response = JSONResponse(content="User is not authorized for this action")
-        response.status_code = 401
-        return response
     newWineID = await request.app.mongodb["auto_incrementer"].find_one_and_update(
         {"_id": "wine"}, {"$inc": {"index": 1}}, {"index": 1}
     )
@@ -139,18 +126,7 @@ async def post_wine(
 
 
 @router.post("/restore/{wineID}")
-async def restore_wine(request: Request, wineID: int = -1, userID: int = -1):
-    requester = await request.app.mongodb["user"].find_one(
-        {"userID": userID}, {"_id": 0}
-    )
-    if requester == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    if requester["status"] != 2:
-        response = JSONResponse(content="User is not authorized for this action")
-        response.status_code = 401
-        return response
+async def restore_wine(request: Request, wineID: int = -1):
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {
@@ -325,22 +301,10 @@ async def get_wine(request: Request, wineID: int, userID: int = -1, num: int = 3
 @router.put("/{wineID}")
 async def update_wine(
     request: Request,
-    userID: int = -1,
     wineID: int = -1,
     wineInfo: WineModel = Body(...),
 ):
     json_wineInfo = jsonable_encoder(wineInfo)
-    requester = await request.app.mongodb["user"].find_one(
-        {"userID": userID}, {"_id": 0}
-    )
-    if requester == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    if requester["status"] != 2:
-        response = JSONResponse(content="User is not authorized for this action")
-        response.status_code = 401
-        return response
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {
@@ -374,16 +338,7 @@ async def update_wine(
 
 
 @router.delete("/{wineID}")
-async def delete_wine(request: Request, wineID: int = -1, userID: int = -1):
-    requester = await request.app.mongodb["user"].find_one(
-        {"userID": userID}, {"_id": 0}
-    )
-    if requester == None or requester["status"] != 2:
-        response = JSONResponse(
-            content="No such user exists or user is not authorized for this action"
-        )
-        response.status_code = 401
-        return response
+async def delete_wine(request: Request, wineID: int = -1):
     wine = await request.app.mongodb["wine"].find_one_and_update(
         {"wineID": wineID},
         {
@@ -425,10 +380,10 @@ async def get_total_wine_reviews(request: Request, wineID: int = -1):
     reviews = request.app.mongodb["review"].find({"wineID": wineID}, {"_id": 0})
     docs = await reviews.to_list(None)
 
-    if len(docs) == 0:
-        response = JSONResponse(content="No reviews exists")
-        response.status_code = 204
-        return response
+    # if len(docs) == 0:
+    #     response = JSONResponse(content=0)
+    #     response.status_code = 200
+    #     return response
     return {"wineID": wineID, "totalReviews": len(docs)}
 
 
@@ -466,6 +421,7 @@ async def get_wine_reviews(
     page: int = 1,
     userID: int = -1,
 ):
+    # TODO SORT
     toSkip = num * (page - 1)
     reviews = request.app.mongodb["review"].aggregate(
         [
@@ -613,9 +569,9 @@ async def get_wine_review_comments(
         {"wineID": wineID, "reviewID": reviewID}, {"_id": 0}
     )
 
-    if review == 0:
-        response = JSONResponse(content="No reviews exists")
-        response.status_code = 204
+    if review == None:
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     print(review)
     return review["comments"][toSkip : (toSkip + num)]
@@ -855,9 +811,10 @@ async def delete_wine_reviews(
         response = JSONResponse(content="userID is invalid. No such user exists in DB")
         response.status_code = 404
         return response
-    review = await request.app.mongodb["review"].find_one(
-        {"reviewID": reviewID, "userID": userID}, {"_id": 0}
-    )
+    match = {"reviewID": reviewID}
+    if user["status"] != 2:
+        match["userID"] = userID
+    review = await request.app.mongodb["review"].find_one(match, {"_id": 0})
     if review == None:
         response = JSONResponse(
             content="reviewID is invalid. No such review exists in DB"
@@ -865,7 +822,7 @@ async def delete_wine_reviews(
         response.status_code = 404
         return response
     deleteReview = await request.app.mongodb["review"].find_one_and_update(
-        {"reviewID": reviewID, "userID": userID},
+        match,
         {
             "$set": {
                 "isDeleted": True,
@@ -903,6 +860,7 @@ async def delete_wine_review_comment(
     commentID: int = -1,
     userID: int = -1,
 ):
+    # 버그있음
     wine = await request.app.mongodb["wine"].find_one({"wineID": wineID}, {"_id": 0})
     if wine == None:
         response = JSONResponse(content="WineID is invalid. No such wine exists in DB")
@@ -922,25 +880,20 @@ async def delete_wine_review_comment(
         response = JSONResponse(content="userID is invalid. No such user exists in DB")
         response.status_code = 404
         return response
-
+    match = {"commentID": commentID}
+    if user["status"] != 2:
+        match["userID"] = userID
     deletedComment = await request.app.mongodb["review"].find_one_and_update(
         {
             "reviewID": reviewID,
-            "comments": {
-                "$elemMatch": {
-                    "userID": userID,
-                    "commentID": commentID,
-                }
-            },
+            "comments": {"$elemMatch": match},
         },
         {
             "$set": {
-                "comments": {
-                    "isDeleted": True,
-                    "lastUpdatedAt": datetime.now()
-                    .astimezone()
-                    .strftime("%Y-%m-%d %H:%M:%S"),
-                }
+                "comments.$.isDeleted": True,
+                "comments.$.lastUpdatedAt": datetime.now()
+                .astimezone()
+                .strftime("%Y-%m-%d %H:%M:%S"),
             }
         },
         {"_id": 0},

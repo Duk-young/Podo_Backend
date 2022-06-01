@@ -33,7 +33,7 @@ async def get_listof_tags(request: Request):
     # TODO API DOCS
     tags = await request.app.mongodb["tag"].find_one({"_id": "main"}, {"_id": 0})
     if tags == None:
-        response = JSONResponse(content="No tags found")
-        response.status_code = 204
+        response = JSONResponse(content=[])
+        response.status_code = 200
         return response
     return tags["names"]

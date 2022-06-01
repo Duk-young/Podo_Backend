@@ -20,7 +20,7 @@ class ReviewModel(BaseModel):
     # wineID: int = Field(...)
     userID: int = Field(...)
     content: str = Field("")
-    rating: float = Field(0)
+    rating: float = Field(1)
     isDeleted: bool = Field(False)
     createdAt: datetime = Field(
         datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")

@@ -152,29 +152,29 @@ async def email_duplicate_check(request: Request, email: str = ""):
     return {"email": email, "duplicate": True}
 
 
-@router.get("/my-winelist-comment")
-async def get_user_winelist_review(
-    request: Request, userID: int = -1, num: int = 20, page: int = 1
-):
-    # 보류
-    toSkip = num * (page - 1)
-    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
-    if user == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    reviews = (
-        request.app.mongodb["review"]
-        .find({"userID": userID}, {"_id": 0})
-        .skip(toSkip)
-        .limit(num)
-    )
-    docs = await reviews.to_list(None)
-    if len(docs) == 0:
-        response = JSONResponse(content=[])
-        response.status_code = 200
-        return response
-    return docs
+# @router.get("/my-winelist-comment")
+# async def get_user_winelist_review(
+#     request: Request, userID: int = -1, num: int = 20, page: int = 1
+# ):
+#     # 보류
+#     toSkip = num * (page - 1)
+#     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+#     if user == None:
+#         response = JSONResponse(content="No such user exists")
+#         response.status_code = 404
+#         return response
+#     reviews = (
+#         request.app.mongodb["review"]
+#         .find({"userID": userID}, {"_id": 0})
+#         .skip(toSkip)
+#         .limit(num)
+#     )
+#     docs = await reviews.to_list(None)
+#     if len(docs) == 0:
+#         response = JSONResponse(content=[])
+#         response.status_code = 200
+#         return response
+#     return docs
 
 
 @router.post("")
@@ -199,7 +199,7 @@ async def post_user(request: Request, userInfo: UserModel = Body(...)):
     return response
 
 
-@router.get("{userID}/all-fields")
+@router.get("/{userID}/all-fields")
 async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
     requester = await request.app.mongodb["user"].find_one(
         {"userID": requesterID}, {"_id": 0}
@@ -217,6 +217,7 @@ async def get_user(request: Request, userID: int = -1, requesterID: int = -1):
         response = JSONResponse(content="userID : No such user exists")
         response.status_code = 404
         return response
+    print("userID", requesterID, "has queried for user info of userID", userID)
     return user
 
 
@@ -349,7 +350,7 @@ async def get_user_followers(request: Request, userID: int = -1):
 @router.get("/{userID}/reviews")
 async def get_user_wine_review(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
-):  # TODO likedBy -> likes 개수로 바꿔줘야함
+):
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -367,6 +368,9 @@ async def get_user_wine_review(
         response = JSONResponse(content=[])
         response.status_code = 200
         return response
+    for doc in docs:
+        doc["likes"] = len(doc["likedBy"])
+        doc.pop("likedBy")
     return docs
 
 
@@ -374,9 +378,6 @@ async def get_user_wine_review(
 async def get_listof_user_reviewed_wine(
     request: Request, userID: int = -1, num: int = 20, page: int = 1
 ):
-    # TODO 204 -> 200 [] DOCS UPDATE
-    # TODO 와인 이미지들을 반환해야하는지?
-    # TODO URL 추가해야 할 듯
     toSkip = num * (page - 1)
     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
     if user == None:
@@ -385,7 +386,7 @@ async def get_listof_user_reviewed_wine(
         return response
     reviews = (
         request.app.mongodb["review"]
-        .find({"userID": userID}, {"_id": 0})
+        .find({"userID": userID}, {"_id": 0, "wineID": 1})
         .skip(toSkip)
         .limit(num)
     )
@@ -399,7 +400,18 @@ async def get_listof_user_reviewed_wine(
         wineIDs.append(doc["wineID"])
     wines = (
         request.app.mongodb["wine"]
-        .find({"wineID": {"$in": wineIDs}}, {"_id": 0})
+        .find(
+            {"wineID": {"$in": wineIDs}},
+            {
+                "_id": 0,
+                "wineID": 1,
+                "name": 1,
+                "tags": 1,
+                "images": 1,
+                "rating": 1,
+                "totalReviews": 1,
+            },
+        )
         .skip(toSkip)
         .limit(num)
     )
@@ -483,58 +495,58 @@ async def get_listof_user_liked_winelist(
     return docs
 
 
-@router.post("/{userID}/like-review")
-async def like_review(request: Request, userID: int = -1, reviewID: int = -1):
-    # TODO DOC UPDATE
-    user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
-    if user == None:
-        response = JSONResponse(content="No such user exists")
-        response.status_code = 404
-        return response
-    review = await request.app.mongodb["review"].find_one(
-        {"reviewID": reviewID}, {"_id": 0}
-    )
-    if review == None:
-        response = JSONResponse(content="No such review exists")
-        response.status_code = 404
-        return response
-    if reviewID not in review["likedBy"]:
-        review = await request.app.mongodb["review"].find_one_and_update(
-            {"reviewID": reviewID},
-            {
-                "$push": {"likedBy": userID},
-                "$set": {
-                    "lastUpdatedAt": datetime.now()
-                    .astimezone()
-                    .strftime("%Y-%m-%d %H:%M:%S"),
-                },
-            },
-            {"_id": 0},
-            return_document=ReturnDocument.AFTER,
-        )
-    else:
-        review = await request.app.mongodb["review"].find_one_and_update(
-            {"reviewID": reviewID},
-            {
-                "$pull": {"likedBy": userID},
-                "$set": {
-                    "lastUpdatedAt": datetime.now()
-                    .astimezone()
-                    .strftime("%Y-%m-%d %H:%M:%S"),
-                },
-            },
-            {"_id": 0},
-            return_document=ReturnDocument.AFTER,
-        )
-    if review == None:
-        response = JSONResponse(content="An error occurred while updating review")
-        response.status_code = 404
-        return response
-    return {
-        "reviewID": review["reviewID"],
-        "likedUser": userID,
-        "lastUpdatedAt": review["lastUpdatedAt"],
-    }
+# @router.post("/{userID}/like-review")
+# async def like_review(request: Request, userID: int = -1, reviewID: int = -1):
+#     # TODO DOC UPDATE
+#     user = await request.app.mongodb["user"].find_one({"userID": userID}, {"_id": 0})
+#     if user == None:
+#         response = JSONResponse(content="No such user exists")
+#         response.status_code = 404
+#         return response
+#     review = await request.app.mongodb["review"].find_one(
+#         {"reviewID": reviewID}, {"_id": 0}
+#     )
+#     if review == None:
+#         response = JSONResponse(content="No such review exists")
+#         response.status_code = 404
+#         return response
+#     if reviewID not in review["likedBy"]:
+#         review = await request.app.mongodb["review"].find_one_and_update(
+#             {"reviewID": reviewID},
+#             {
+#                 "$push": {"likedBy": userID},
+#                 "$set": {
+#                     "lastUpdatedAt": datetime.now()
+#                     .astimezone()
+#                     .strftime("%Y-%m-%d %H:%M:%S"),
+#                 },
+#             },
+#             {"_id": 0},
+#             return_document=ReturnDocument.AFTER,
+#         )
+#     else:
+#         review = await request.app.mongodb["review"].find_one_and_update(
+#             {"reviewID": reviewID},
+#             {
+#                 "$pull": {"likedBy": userID},
+#                 "$set": {
+#                     "lastUpdatedAt": datetime.now()
+#                     .astimezone()
+#                     .strftime("%Y-%m-%d %H:%M:%S"),
+#                 },
+#             },
+#             {"_id": 0},
+#             return_document=ReturnDocument.AFTER,
+#         )
+#     if review == None:
+#         response = JSONResponse(content="An error occurred while updating review")
+#         response.status_code = 404
+#         return response
+#     return {
+#         "reviewID": review["reviewID"],
+#         "likedUser": userID,
+#         "lastUpdatedAt": review["lastUpdatedAt"],
+#     }
 
 
 @router.post("/{userID}/like-wine")
@@ -770,33 +782,6 @@ async def like_user(
             response = JSONResponse(content="target user is not in the follower list")
             response.status_code = 404
             return response
-        # else:
-        #     user = await request.app.mongodb["user"].find_one_and_update(
-        #         {"userID": userID},
-        #         {
-        #             "$push": {"followers": targetUserID},
-        #             "$set": {
-        #                 "lastUpdatedAt": datetime.now()
-        #                 .astimezone()
-        #                 .strftime("%Y-%m-%d %H:%M:%S"),
-        #             },
-        #         },
-        #         {"_id": 0},
-        #         return_document=ReturnDocument.AFTER,
-        #     )
-        #     targetUserAppend = await request.app.mongodb["user"].find_one_and_update(
-        #         {"userID": targetUserID},
-        #         {
-        #             "$push": {"following": userID},
-        #             "$set": {
-        #                 "lastUpdatedAt": datetime.now()
-        #                 .astimezone()
-        #                 .strftime("%Y-%m-%d %H:%M:%S"),
-        #             },
-        #         },
-        #         {"_id": 0},
-        #         return_document=ReturnDocument.AFTER,
-        #     )
     if user == None:
         response = JSONResponse(content="An error occurred while updating user")
         response.status_code = 404
@@ -917,6 +902,7 @@ async def delete_wine(request: Request, userID: int = -1, adminID: int = -1):
         response = JSONResponse(content="userID : No such user exists")
         response.status_code = 404
         return response
+    print("adminID", adminID, "deleted userID", userID)
     return {
         "userID": userID,
         "isDeleted": user["isDeleted"],

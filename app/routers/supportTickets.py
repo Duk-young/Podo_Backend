@@ -38,11 +38,10 @@ async def get_total_support_tickets(request: Request, userID: int = -1):
         response = JSONResponse(content="No such user exists")
         response.status_code = 404
         return response
+    match = {}
     if user["status"] != 2:
-        response = JSONResponse(content="user is not the admin")
-        response.status_code = 401
-        return response
-    tickets = request.app.mongodb["supportTicket"].find({}, {"_id": 0})
+        match["userID"] = userID
+    tickets = request.app.mongodb["supportTicket"].find(match, {"_id": 0})
     docs = await tickets.to_list(None)
     return {"totalSupportTickets": len(docs)}
 
@@ -65,66 +64,38 @@ async def get_support_tickets(
         ticketStatus.append(2)
     else:
         ticketStatus.append(status)
-    if requester["status"] == 2:
-        supportTickets = request.app.mongodb["supportTicket"].aggregate(
-            [
-                {"$match": {"status": {"$in": ticketStatus}}},
-                {
-                    "$lookup": {
-                        "from": "user",
-                        "localField": "userID",
-                        "foreignField": "userID",
-                        "pipeline": [
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                    "username": 1,
-                                }
+    match = {"$match": {"status": {"$in": ticketStatus}}}
+    if requester["status"] != 2:
+        match["$match"]["userID"] = userID
+    supportTickets = request.app.mongodb["supportTicket"].aggregate(
+        [
+            match,
+            {
+                "$lookup": {
+                    "from": "user",
+                    "localField": "userID",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "username": 1,
                             }
-                        ],
-                        "as": "userInfo",
-                    }
-                },
-                {
-                    "$project": {
-                        "_id": 0,
-                    }
-                },
-                {"$sort": {"_id": -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
-            ]
-        )
-    else:
-        supportTickets = request.app.mongodb["supportTicket"].aggregate(
-            [
-                {"$match": {"userID": userID, "status": {"$in": ticketStatus}}},
-                {
-                    "$lookup": {
-                        "from": "user",
-                        "localField": "userID",
-                        "foreignField": "userID",
-                        "pipeline": [
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                    "username": 1,
-                                }
-                            }
-                        ],
-                        "as": "userInfo",
-                    }
-                },
-                {
-                    "$project": {
-                        "_id": 0,
-                    }
-                },
-                {"$sort": {"_id": -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
-            ]
-        )
+                        }
+                    ],
+                    "as": "userInfo",
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                }
+            },
+            {"$sort": {"_id": -1}},
+            {"$skip": toSkip},
+            {"$limit": num},
+        ]
+    )
     docs = await supportTickets.to_list(None)
     if len(docs) == 0:
         response = JSONResponse(content=[])
@@ -177,11 +148,11 @@ async def post_support_ticket(
 
 
 @router.get("/{ticketID}")
-async def get_support_tickets(request: Request, userID: int = -1, ticketID: int = -1):
+async def get_support_ticket(request: Request, userID: int = -1, ticketID: int = -1):
     requester = await request.app.mongodb["user"].find_one(
         {"userID": userID}, {"_id": 0}
     )
-    supportTicket = request.app.mongodb["supportTicket"].find(
+    supportTicket = await request.app.mongodb["supportTicket"].find_one(
         {"ticketID": ticketID}, {"_id": 0}
     )
     if supportTicket == None:
@@ -200,7 +171,7 @@ async def get_support_tickets(request: Request, userID: int = -1, ticketID: int 
 
 
 @router.put("/answer")
-async def update_support_tickets(
+async def answer_support_tickets(
     request: Request,
     ticketID: int = -1,
     ticketInfo: SupportTicketAnswerModel = Body(...),

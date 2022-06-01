@@ -38,11 +38,10 @@ async def get_total_verification_tickets(request: Request, userID: int = -1):
         response = JSONResponse(content="No such user exists")
         response.status_code = 404
         return response
+    match = {}
     if user["status"] != 2:
-        response = JSONResponse(content="user is not the admin")
-        response.status_code = 401
-        return response
-    tickets = request.app.mongodb["verificationTicket"].find({}, {"_id": 0})
+        match["userID"] = userID
+    tickets = request.app.mongodb["verificationTicket"].find(match, {"_id": 0})
     docs = await tickets.to_list(None)
     return {"totalVerificationTickets": len(docs)}
 
@@ -50,7 +49,7 @@ async def get_total_verification_tickets(request: Request, userID: int = -1):
 @router.get("")
 async def get_verification_tickets(
     request: Request, userID: int = -1, status: int = -1, num: int = 10, page: int = 1
-):  # TODO DOC 수정 필요 TODO username, isDeleted 적용
+):
     toSkip = num * (page - 1)
     requester = await request.app.mongodb["user"].find_one(
         {"userID": userID}, {"_id": 0}
@@ -65,66 +64,38 @@ async def get_verification_tickets(
         ticketStatus = [0, 1, 2]
     else:
         ticketStatus.append(status)
-    if requester["status"] == 2:
-        verificationTickets = request.app.mongodb["verificationTicket"].aggregate(
-            [
-                {"$match": {"status": {"$in": ticketStatus}}},
-                {
-                    "$lookup": {
-                        "from": "user",
-                        "localField": "userID",
-                        "foreignField": "userID",
-                        "pipeline": [
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                    "username": 1,
-                                }
+    match = {"$match": {"status": {"$in": ticketStatus}}}
+    if requester["status"] != 2:
+        match["$match"]["userID"] = userID
+    verificationTickets = request.app.mongodb["verificationTicket"].aggregate(
+        [
+            match,
+            {
+                "$lookup": {
+                    "from": "user",
+                    "localField": "userID",
+                    "foreignField": "userID",
+                    "pipeline": [
+                        {
+                            "$project": {
+                                "_id": 0,
+                                "username": 1,
                             }
-                        ],
-                        "as": "userInfo",
-                    }
-                },
-                {
-                    "$project": {
-                        "_id": 0,
-                    }
-                },
-                {"$sort": {"_id": -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
-            ]
-        )
-    else:
-        verificationTickets = request.app.mongodb["verificationTicket"].aggregate(
-            [
-                {"$match": {"userID": userID, "status": {"$in": ticketStatus}}},
-                {
-                    "$lookup": {
-                        "from": "user",
-                        "localField": "userID",
-                        "foreignField": "userID",
-                        "pipeline": [
-                            {
-                                "$project": {
-                                    "_id": 0,
-                                    "username": 1,
-                                }
-                            }
-                        ],
-                        "as": "userInfo",
-                    }
-                },
-                {
-                    "$project": {
-                        "_id": 0,
-                    }
-                },
-                {"$sort": {"_id": -1}},
-                {"$skip": toSkip},
-                {"$limit": num},
-            ]
-        )
+                        }
+                    ],
+                    "as": "userInfo",
+                }
+            },
+            {
+                "$project": {
+                    "_id": 0,
+                }
+            },
+            {"$sort": {"_id": -1}},
+            {"$skip": toSkip},
+            {"$limit": num},
+        ]
+    )
     docs = await verificationTickets.to_list(None)
     if len(docs) == 0:
         response = JSONResponse(content=[])
@@ -173,13 +144,13 @@ async def post_verification_ticket(
 
 
 @router.get("/{ticketID}")
-async def get_verification_tickets(
+async def get_verification_ticket(
     request: Request, userID: int = -1, ticketID: int = -1
 ):
     requester = await request.app.mongodb["user"].find_one(
         {"userID": userID}, {"_id": 0}
     )
-    verificationTicket = request.app.mongodb["verificationTicket"].find(
+    verificationTicket = await request.app.mongodb["verificationTicket"].find_one(
         {"ticketID": ticketID}, {"_id": 0}
     )
     if verificationTicket == None:
@@ -198,7 +169,7 @@ async def get_verification_tickets(
 
 
 @router.put("/answer")
-async def update_verification_tickets(
+async def answer_verification_tickets(
     request: Request,
     ticketInfo: VerificationTicketAnswerModel = Body(...),
 ):

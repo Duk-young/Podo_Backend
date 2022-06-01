@@ -573,8 +573,9 @@ async def get_wine_reviews(
         else:
             review["username"] = review["username"][0]
         if len(review["profileImage"]) == 0:
-            # TODO 디폴트 이미지로 대체
-            review["profileImage"] = ""
+            review[
+                "profileImage"
+            ] = "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/user/default-profile-image.jpg"
         else:
             review["profileImage"] = review["profileImage"][0]
         if len(review["status"]) == 0:
@@ -586,8 +587,9 @@ async def get_wine_reviews(
         for comment in review["comments"]:
             if "username" not in comment.keys():
                 comment["username"] = "Deleted User"
-                # TODO 디폴트
-                comment["profileImage"] = ""
+                comment[
+                    "profileImage"
+                ] = "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/user/default-profile-image.jpg"
                 comment["status"] = 0
     return docs
 

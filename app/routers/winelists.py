@@ -83,6 +83,7 @@ async def search_winelists(
         if len(tags) != 0:
             match["$match"]["tags"] = {"$all": regexTags}
     if user:
+        user["followings"].append(userID)
         match["$match"]["userID"] = {"$in": user["followings"]}
     print(match)
     toSkip = num * (page - 1)

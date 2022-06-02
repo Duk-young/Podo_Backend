@@ -10,7 +10,7 @@
 ## Backend Repo has been deployed via Heroku. You don't have to install the backend in your local!
 ### ==> https://podo-backend.herokuapp.com/
 
-## Or you can install backend in your local computer with instructions below
+- you can also install backend in your local computer by following the instructions below.
 
 ## Before the installation
 ### The system requires environment variables to run. This can be found in our team Slack.

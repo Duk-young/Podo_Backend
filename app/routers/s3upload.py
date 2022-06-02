@@ -21,6 +21,7 @@ router = APIRouter(
     responses={
         404: {"description": "Not found"},
         403: {"description": "Operation forbidden"},
+        204: {"description": "No content found"},        
     },
 )
 

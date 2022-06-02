@@ -1,0 +1,78 @@
+[
+    {
+        "wineID": 10,
+        "tags": [
+            "France",
+            "Montrachet Grand Cru",
+            "Joseph Drouhin",
+            "White wine",
+            "Chardonnay"
+        ],
+        "name": "Montrachet Grand Cru Marquis de Laguiche 2017",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Montrachet_Grand_Cru_Marquis_de_Laguiche_2017.png"
+        ],
+        "lightness": 3.7,
+        "smoothness": 0,
+        "sweetness": 1.0,
+        "softness": 2.6,
+        "abv": 14.0,
+        "price": "$887.96",
+        "region": [
+            "France",
+            "Bourgogne",
+            "C\u00f4te de Beaune",
+            "Puligny-Montrachet",
+            "Montrachet Grand Cru"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "100% Chardonnay"
+        ],
+        "winery": "Joseph Drouhin",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:45",
+        "lastUpdateAt": "2022-04-17 21:45"
+    },
+    {
+        "wineID": 11,
+        "tags": [
+            "France",
+            "B\u00e2tard-Montrachet Grand Cru",
+            "Olivier Leflaive",
+            "White wine",
+            "Chardonnay"
+        ],
+        "name": "B\u00e2tard-Montrachet Grand Cru 2012",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/B\u00e2tard-Montrachet_Grand_Cru_2012.png"
+        ],
+        "lightness": 3.9,
+        "smoothness": 0,
+        "sweetness": 0.7,
+        "softness": 2.8,
+        "abv": 13.5,
+        "price": "$499",
+        "region": [
+            "France",
+            "Bourgogne",
+            "C\u00f4te de Beaune",
+            "Puligny-Montrachet",
+            "B\u00e2tard-Montrachet Grand Cru"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "Chardonnay"
+        ],
+        "winery": "Olivier Leflaive",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:45",
+        "lastUpdateAt": "2022-04-17 21:45"
+    }
+]

@@ -1,0 +1,75 @@
+[
+    {
+        "wineID": 0,
+        "tags": [
+            "France",
+            "Sauternes",
+            "Ch\u00e2teau Doisy-Da\u00ebne",
+            "Dessert wine",
+            "S\u00e9millon"
+        ],
+        "name": "L'Extravagant de Doisy-Da\u00ebne Sauternes 2001",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/L'Extravagant_de_Doisy-Da\u00ebne_Sauternes_2001.png"
+        ],
+        "lightness": 5.0,
+        "smoothness": 0,
+        "sweetness": 5.0,
+        "softness": 4.6,
+        "abv": 13.5,
+        "price": "$345",
+        "region": [
+            "France",
+            "Bordeaux",
+            "Sauternes"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "S\u00e9millon"
+        ],
+        "winery": "Ch\u00e2teau Doisy-Da\u00ebne",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:42",
+        "lastUpdateAt": "2022-04-17 21:42"
+    },
+    {
+        "wineID": 1,
+        "tags": [
+            "France",
+            "Sauternes",
+            "Ch\u00e2teau d'Yquem",
+            "Dessert wine",
+            "Blend"
+        ],
+        "name": "Sauternes 1997",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Sauternes_1997.png"
+        ],
+        "lightness": 5.0,
+        "smoothness": 0,
+        "sweetness": 5.0,
+        "softness": 4.5,
+        "abv": 13.9,
+        "price": "$574.97",
+        "region": [
+            "France",
+            "Bordeaux",
+            "Sauternes"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "Sauvignon Blanc",
+            "S\u00e9millon"
+        ],
+        "winery": "Ch\u00e2teau d'Yquem",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:42",
+        "lastUpdateAt": "2022-04-17 21:42"
+    }
+]

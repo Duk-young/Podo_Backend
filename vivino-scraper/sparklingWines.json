@@ -1,0 +1,75 @@
+[
+    {
+        "wineID": 8,
+        "tags": [
+            "France",
+            "Champagne Grand Cru",
+            "Jacques Selosse",
+            "Sparkling wine",
+            "Chardonnay"
+        ],
+        "name": "Mill\u00e9sime Extra Brut Champagne Grand Cru 2008",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Mill\u00e9sime_Extra_Brut_Champagne_Grand_Cru_2008.png"
+        ],
+        "lightness": 4.4,
+        "smoothness": 0,
+        "sweetness": 0,
+        "softness": 4.8,
+        "abv": 0,
+        "price": "$5,498.32",
+        "region": [
+            "France",
+            "Champagne",
+            "Champagne Grand Cru"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "Chardonnay"
+        ],
+        "winery": "Jacques Selosse",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:44",
+        "lastUpdateAt": "2022-04-17 21:44"
+    },
+    {
+        "wineID": 9,
+        "tags": [
+            "France",
+            "Champagne Grand Cru 'Le Mesnil-sur-Oger'",
+            "Salon",
+            "Sparkling wine",
+            "Chardonnay"
+        ],
+        "name": "Le Mesnil Blanc de Blancs (Cuv\u00e9e S) Brut Champagne 1996",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Le_Mesnil_Blanc_de_Blancs_(Cuv\u00e9e_S)_Brut_Champagne_1996.png"
+        ],
+        "lightness": 4.0,
+        "smoothness": 0,
+        "sweetness": 0,
+        "softness": 4.7,
+        "abv": 0,
+        "price": "$1,750",
+        "region": [
+            "France",
+            "Champagne",
+            "C\u00f4te des Blancs",
+            "Champagne Grand Cru 'Le Mesnil-sur-Oger'"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "100% Chardonnay"
+        ],
+        "winery": "Salon",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:44",
+        "lastUpdateAt": "2022-04-17 21:44"
+    }
+]

@@ -1,0 +1,78 @@
+[
+    {
+        "wineID": 4,
+        "tags": [
+            "United States",
+            "Sta. Rita Hills",
+            "Sine Qua Non",
+            "Red wine",
+            "Grenache"
+        ],
+        "name": "Rattrapante Grenache 2012",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Rattrapante_Grenache_2012.png"
+        ],
+        "lightness": 0,
+        "smoothness": 0,
+        "sweetness": 0,
+        "softness": 0,
+        "abv": 15.6,
+        "price": "$699.99",
+        "region": [
+            "United States",
+            "California",
+            "Central Coast",
+            "Santa Barbara County",
+            "Sta. Rita Hills"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "100% Grenache"
+        ],
+        "winery": "Sine Qua Non",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:43",
+        "lastUpdateAt": "2022-04-17 21:43"
+    },
+    {
+        "wineID": 5,
+        "tags": [
+            "United States",
+            "Napa Valley",
+            "Hundred Acre",
+            "Red wine",
+            "Cabernet Sauvignon"
+        ],
+        "name": "Wraith Cabernet Sauvignon 2014",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Wraith_Cabernet_Sauvignon_2014.png"
+        ],
+        "lightness": 5.0,
+        "smoothness": 2.7,
+        "sweetness": 1.1,
+        "softness": 2.5,
+        "abv": 15.5,
+        "price": "$999.99",
+        "region": [
+            "United States",
+            "California",
+            "North Coast",
+            "Napa County",
+            "Napa Valley"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "100% Cabernet Sauvignon"
+        ],
+        "winery": "Hundred Acre",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:43",
+        "lastUpdateAt": "2022-04-17 21:43"
+    }
+]

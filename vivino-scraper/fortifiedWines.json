@@ -1,0 +1,78 @@
+[
+    {
+        "wineID": 2,
+        "tags": [
+            "Portugal",
+            "Porto",
+            "Krohn",
+            "Fortified Wine",
+            "Blend"
+        ],
+        "name": "Colheita Port 1957",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Colheita_Port_1957.png"
+        ],
+        "lightness": 0,
+        "smoothness": 0,
+        "sweetness": 0,
+        "softness": 0,
+        "abv": 0,
+        "price": "$669.95",
+        "region": [
+            "Portugal",
+            "Duriense",
+            "Porto"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "Tinta Roriz",
+            "Tinto Cao",
+            "Tinta Barroca",
+            "Touriga Francesa",
+            "Touriga Nacional"
+        ],
+        "winery": "Krohn",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:42",
+        "lastUpdateAt": "2022-04-17 21:42"
+    },
+    {
+        "wineID": 3,
+        "tags": [
+            "Spain",
+            "Montilla-Moriles",
+            "Toro Albal\u00e1",
+            "Fortified Wine",
+            "Pedro Ximenez"
+        ],
+        "name": "Don PX Convento Selecci\u00f3n 1946",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Don_PX_Convento_Selecci\u00f3n_1946.png"
+        ],
+        "lightness": 5.0,
+        "smoothness": 0,
+        "sweetness": 5.0,
+        "softness": 2.4,
+        "abv": 17.0,
+        "price": "$499.99",
+        "region": [
+            "Spain",
+            "Andaluc\u00eda",
+            "Montilla-Moriles"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "100% Pedro Ximenez"
+        ],
+        "winery": "Toro Albal\u00e1",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:43",
+        "lastUpdateAt": "2022-04-17 21:43"
+    }
+]

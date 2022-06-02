@@ -1,0 +1,77 @@
+[
+    {
+        "wineID": 6,
+        "tags": [
+            "France",
+            "C\u00f4tes de Provence",
+            "Ch\u00e2teau d'Esclans",
+            "Ros\u00e9 wine",
+            "Blend"
+        ],
+        "name": "Garrus Ros\u00e9 2019",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Garrus_Ros\u00e9_2019.png"
+        ],
+        "lightness": 2.1,
+        "smoothness": 0,
+        "sweetness": 0.1,
+        "softness": 3.7,
+        "abv": 14.0,
+        "price": "$99.99",
+        "region": [
+            "France",
+            "Provence",
+            "C\u00f4tes de Provence"
+        ],
+        "bottleClosure": "",
+        "grape": [
+            "70% Grenache",
+            "30% Rolle"
+        ],
+        "winery": "Ch\u00e2teau d'Esclans",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:43",
+        "lastUpdateAt": "2022-04-17 21:43"
+    },
+    {
+        "wineID": 7,
+        "tags": [
+            "Spain",
+            "Rioja Alta",
+            "R. L\u00f3pez de Heredia",
+            "Ros\u00e9 wine",
+            "Blend"
+        ],
+        "name": "Gran Reserva Rosado 2010",
+        "images": [
+            "https://oneego-image-storage.s3.ap-northeast-2.amazonaws.com/wines/Gran_Reserva_Rosado_2010.png"
+        ],
+        "lightness": 0,
+        "smoothness": 0,
+        "sweetness": 0,
+        "softness": 0,
+        "abv": 14.0,
+        "price": "$199.97",
+        "region": [
+            "Spain",
+            "Rioja",
+            "Rioja Alta"
+        ],
+        "bottleClosure": "Cork",
+        "grape": [
+            "60% Garnacha",
+            "30% Tempranillo",
+            "10% Viura"
+        ],
+        "winery": "R. L\u00f3pez de Heredia",
+        "description": "",
+        "views": 0,
+        "likes": 0,
+        "isDeleted": false,
+        "createdAt": "2022-04-17 21:44",
+        "lastUpdateAt": "2022-04-17 21:44"
+    }
+]

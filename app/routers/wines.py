@@ -13,6 +13,7 @@ from fastapi import (
 )
 import sys
 from .wineRecommendations import get_wine_recommendations
+from .tag import get_listof_tags
 from fastapi.responses import JSONResponse
 from pymongo import ReturnDocument
 from fastapi.encoders import jsonable_encoder
@@ -22,6 +23,7 @@ from ..models.ReviewModel import ReviewModel, CommentModel
 from datetime import datetime
 import re
 from time import time
+import random
 
 router = APIRouter(
     prefix="/wines",
@@ -626,6 +628,10 @@ async def get_wine_review_comments(
         ]
     )
     comments = await comments.to_list(None)
+    if len(comments) == 0:
+        response = JSONResponse(content=[])
+        response.status_code = 200
+        return response
     comments = comments[0]["comments"]
     if len(comments[0]) == 0:
         response = JSONResponse(content=[])
@@ -1024,4 +1030,23 @@ async def update_rating(request: Request, wineID: int = -1):
 async def update_wine_ratings(request: Request):
     for i in range(3000):
         await update_rating(request=request, wineID=i)
+        print("wineID", i, "updated.")
+
+
+@router.get("/tag-population/all")
+async def update_wine_tags(request: Request):
+    tags = await get_listof_tags(request)
+    tags = tags[:15]
+
+    for i in range(1, 3000):
+        wine = await request.app.mongodb["wine"].find_one(
+            {"wineID": i}, {"_id": 0, "tags": 1}
+        )
+        newTags = [elem for elem in wine["tags"] if elem not in tags]
+        indexes = random.sample(range(1, len(tags)), 5)
+        for index in indexes:
+            newTags.append(tags[index])
+        wine = await request.app.mongodb["wine"].update_one(
+            {"wineID": i}, {"$set": {"tags": newTags}}
+        )
         print("wineID", i, "updated.")

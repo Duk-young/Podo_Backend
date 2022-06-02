@@ -47,7 +47,7 @@ python3 -m venv venv
 pip3 install -r requirements.txt
 ```
 
-## Server start
+### Server start
 
 ```bash
 # Starts backend server in local
@@ -82,6 +82,7 @@ docker stop podo_back_container
 ## Testing APIs
 - Our Backend use Fast API Framework which supports swagger-UI
 - Default port for backend is set to 5001, so you can access http://localhost:5001/docs to check and try out all the available APIs.
+- Make sure you start server before you access to http://localhost:5001
 
 ## Instructions for Deployment
 - The workflow has been set to create a Docker image and push it to Heroku. So you do not have to worry about it, since it will be deployed as the codes get pushed to main branch
@@ -103,8 +104,8 @@ pip freeze > requirements.txt
 
 - /vivino-scraper includes files used for scraping wine information from vivino.
     - This does not require any deployment, you can simply run:
-    - 1. collectDetails.py to collect urls for wine detail pages
-    - 2. urlScrap.py to iterate through urls collected in step 1.
+    1. collectDetails.py to collect urls for wine detail pages
+    2. urlScrap.py to iterate through urls collected in step 1.
 
 - /recommendations-update includes files that updates csv files needed for wine recommendation APIs.
     - This is already deployed via Heroku. csv files are updated every midnight.

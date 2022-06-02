@@ -99,3 +99,12 @@ pip freeze > requirements.txt
 - Please join the Backend Bug Report channel and report bugs you found!
 - They will be fixed very soon. Also, feel free to suggest anything you need.
 
+## Auxiliary programs included in this repo
+
+- /vivino-scraper includes files used for scraping wine information from vivino.
+    - This does not require any deployment, you can simply run:
+    - 1. collectDetails.py to collect urls for wine detail pages
+    - 2. urlScrap.py to iterate through urls collected in step 1.
+
+- /recommendations-update includes files that updates csv files needed for wine recommendation APIs.
+    - This is already deployed via Heroku. csv files are updated every midnight.

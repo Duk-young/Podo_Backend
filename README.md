@@ -1,6 +1,6 @@
 # CSE416 PODO BACKEND BY TEAM ONE-EGO
 
-## Database Scheam can be found:
+## Database Schema Design can be found:
 - https://dbdocs.io/amdy1997/CSE416_Data_Schema?view=table_structure
 
 ## Backend API Documentation can be found:

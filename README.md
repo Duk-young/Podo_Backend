@@ -1,20 +1,20 @@
 # CSE416 PODO BACKEND BY TEAM ONE-EGO
 
 ## Database Scheam can be found:
-### https://dbdocs.io/amdy1997/CSE416_Data_Schema?view=table_structure
+- https://dbdocs.io/amdy1997/CSE416_Data_Schema?view=table_structure
 
 ## Backend API Documentation can be found:
-### https://app.gitbook.com/s/t2Bs0VKkwGTAaAIr09Ja/reference/api-reference
+- https://app.gitbook.com/s/t2Bs0VKkwGTAaAIr09Ja/reference/api-reference
 - Please note that some APIs are for internal use, they are not listed in the API documentation.
 
 ## Backend Repo has been deployed via Heroku. You don't have to install the backend in your local!
-### ==> https://podo-backend.herokuapp.com/
+- https://podo-backend.herokuapp.com/
 
 - you can also install backend in your local computer by following the instructions below.
 
 ## Before the installation
 ### The system requires environment variables to run. This can be found in our team Slack.
-### https://join.slack.com/t/cse416voyage/shared_invite/zt-1aekg8yg0-BX9fhsYIVvxDHvDsL7S24w
+- https://join.slack.com/t/cse416voyage/shared_invite/zt-1aekg8yg0-BX9fhsYIVvxDHvDsL7S24w
 
 ## Local Backend Installation
 

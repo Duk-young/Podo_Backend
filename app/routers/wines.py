@@ -508,6 +508,7 @@ async def get_wine_reviews(
                     },
                 }
             },
+            {"$sort": {"_id": -1}},
             {
                 "$project": {
                     "_id": 0,
@@ -625,6 +626,7 @@ async def get_wine_review_comments(
                 }
             },
             {"$project": {"_id": 0}},
+            # {"$sort": {"_id": -1}},
         ]
     )
     comments = await comments.to_list(None)

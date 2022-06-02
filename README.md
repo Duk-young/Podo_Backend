@@ -12,13 +12,9 @@
 
 - you can also install backend in your local computer by following the instructions below.
 
-## Before the installation
-### The system requires environment variables to run. This can be found in our team Slack.
+## Before the Local Backend Installation
+### The system requires <strong>environment variables<strong> to run. This can be found in our team Slack.
 - https://join.slack.com/t/cse416voyage/shared_invite/zt-1aekg8yg0-BX9fhsYIVvxDHvDsL7S24w
-
-## Local Backend Installation
-
-- Please follow the instructions below if you pulled back-end repo for the first time.
 
 ## Without Docker
 ### For Windows

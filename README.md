@@ -2,15 +2,23 @@
 
 ## Database Scheam can be found:
 ### https://dbdocs.io/amdy1997/CSE416_Data_Schema?view=table_structure
+
 ## Backend API Documentation can be found:
 ### https://app.gitbook.com/s/t2Bs0VKkwGTAaAIr09Ja/reference/api-reference
+- Please note that some APIs are for internal use, they are not listed in the API documentation.
+
 ## Backend Repo has been deployed via Heroku. You don't have to install the backend in your local!
 ### ==> https://podo-backend.herokuapp.com/
-## Or you can install backend in your local computer
 
-## Installation
+## Or you can install backend in your local computer with instructions below
 
-- Please follow the instructions below if you installed back-end repo for the first time.
+## Before the installation
+### The system requires environment variables to run. This can be found in our team Slack.
+### https://join.slack.com/t/cse416voyage/shared_invite/zt-1aekg8yg0-BX9fhsYIVvxDHvDsL7S24w
+
+## Local Backend Installation
+
+- Please follow the instructions below if you pulled back-end repo for the first time.
 
 ## Without Docker
 ### For Windows
@@ -71,10 +79,23 @@ docker run -d --name podo_back_container -p 5001:8888 -t podo_back
 # docker container stop
 docker stop podo_back_container
 ```
+## Testing APIs
+- Our Backend use Fast API Framework which supports swagger-UI
+- Default port for backend is set to 5001, so you can access http://localhost:5001/docs to check and try out all the available APIs.
 
-## For your information
+## Instructions for Deployment
+- The workflow has been set to create a Docker image and push it to Heroku. So you do not have to worry about it, since it will be deployed as the codes get pushed to main branch
 
-- We are using Fast API Framework for our back-end
-- you can check and test all the available apis at http://localhost:5001/docs
-- Please pull backend repo daily as I will frequently update the codes.
-- Please DO NOT CHANGE ANY CODE and PUSH TO THE MASTER without my permission.
+- Please make sure you update a requirements.txt when you install new packages for Backend
+```bash
+# update requirements.txt
+pip freeze > requirements.txt
+```
+
+## Bug Report and Suggestions
+- Backend bug reports are being made with using Slack.
+- https://join.slack.com/t/cse416voyage/shared_invite/zt-1aekg8yg0-BX9fhsYIVvxDHvDsL7S24w
+
+- Please join the Backend Bug Report channel and report bugs you found!
+- They will be fixed very soon. Also, feel free to suggest anything you need.
+
